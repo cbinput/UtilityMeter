@@ -41,6 +41,7 @@ public static class WebApplicationExtensions
         _ = app.MapVersionEndpoints();
         _ = app.MapReadingEndpoints();
         _ = app.MapEvidenceEndpoints();
+        _ = app.MapReportEndpoints();
 
         #endregion MinimalApi
 

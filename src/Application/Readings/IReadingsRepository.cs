@@ -4,6 +4,7 @@ using CleanMinimalApi.Application.Readings.Entities;
 
 public interface IReadingsRepository
 {
+    public Task<List<Reading>> GetAllAsync(CancellationToken cancellationToken = default);
     public Task<Reading?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
     public Task<List<Reading>> GetByMeterIdAsync(Guid meterId, CancellationToken cancellationToken = default);
     public Task<List<Reading>> GetByPropertyIdAsync(Guid propertyId, CancellationToken cancellationToken = default);

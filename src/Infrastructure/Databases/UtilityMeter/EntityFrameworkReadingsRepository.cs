@@ -8,6 +8,11 @@ internal class EntityFrameworkReadingsRepository(UtilityMeterDbContext context) 
 {
     private readonly UtilityMeterDbContext context = context ?? throw new ArgumentNullException(nameof(context));
 
+    public async Task<List<Reading>> GetAllAsync(CancellationToken cancellationToken = default)
+    {
+        return await this.context.Readings.OrderByDescending(r => r.MeasuredAt).ToListAsync(cancellationToken);
+    }
+
     public async Task<Reading?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await this.context.Readings.FirstOrDefaultAsync(r => r.Id == id, cancellationToken);

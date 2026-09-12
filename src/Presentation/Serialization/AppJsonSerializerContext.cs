@@ -6,6 +6,7 @@ using Application.Evidence.Commands.UploadEvidence;
 using Application.Evidence.Dtos;
 using Application.Readings.Commands.CreateReading;
 using Application.Readings.Dtos;
+using Application.Reports.Dtos;
 using Application.Versions.Entities;
 using Endpoints;
 using Requests;
@@ -26,6 +27,11 @@ using Requests;
 [JsonSerializable(typeof(CreateReadingResponse))]
 [JsonSerializable(typeof(ReadingDto))]
 [JsonSerializable(typeof(List<ReadingDto>))]
+[JsonSerializable(typeof(PendingReadingDto))]
+[JsonSerializable(typeof(List<PendingReadingDto>))]
+[JsonSerializable(typeof(AbnormalReadingDto))]
+[JsonSerializable(typeof(List<AbnormalReadingDto>))]
+[JsonSerializable(typeof(MonthlySummaryDto))]
 [JsonSerializable(typeof(UploadEvidenceResponse))]
 [JsonSerializable(typeof(AttachEvidenceRequest))]
 [JsonSerializable(typeof(AttachEvidenceToReadingResponse))]

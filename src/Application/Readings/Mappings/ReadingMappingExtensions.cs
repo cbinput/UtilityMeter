@@ -20,7 +20,8 @@ public static class ReadingMappingExtensions
             reading.MeasuredAt,
             reading.Source,
             reading.Status,
-            reading.EvidenceIds);
+            reading.EvidenceIds,
+            reading.Alerts);
     }
 
     public static List<ReadingDto> ToDtoList(this IEnumerable<Reading> readings)

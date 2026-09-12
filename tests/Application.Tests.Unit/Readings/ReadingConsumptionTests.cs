@@ -53,4 +53,17 @@ public class ReadingConsumptionTests
         alert.Severity.ShouldBe(AlertSeverity.Warning);
         alert.Message.ShouldContain("lower than the previous reading");
     }
+
+    [Fact]
+    public void GetAlerts_ShouldFlagHighConsumption_WithoutRejectingReading()
+    {
+        var previous = new Reading { MeterId = Guid.NewGuid(), Value = 100m };
+        var current = new Reading { MeterId = previous.MeterId, Value = 160m };
+
+        var alerts = Reading.GetAlerts(previous, current, 25m);
+
+        alerts.Count.ShouldBe(1);
+        alerts[0].Type.ShouldBe(AlertType.AbnormallyHighConsumption);
+        alerts[0].Severity.ShouldBe(AlertSeverity.Warning);
+    }
 }

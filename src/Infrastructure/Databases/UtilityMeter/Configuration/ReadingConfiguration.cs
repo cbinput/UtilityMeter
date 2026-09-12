@@ -53,6 +53,16 @@ internal class ReadingConfiguration : IEntityTypeConfiguration<Reading>
                 ValueComparers.GuidListComparer)
             .IsRequired();
 
+        _ = builder.OwnsMany(r => r.Alerts, alerts =>
+        {
+            _ = alerts.WithOwner().HasForeignKey("ReadingId");
+            _ = alerts.HasKey(alert => alert.Id);
+            _ = alerts.Property(alert => alert.Message).IsRequired().HasMaxLength(500);
+            _ = alerts.Property(alert => alert.Type).IsRequired();
+            _ = alerts.Property(alert => alert.Severity).IsRequired();
+            _ = alerts.Property(alert => alert.CreatedAt).IsRequired();
+        });
+
         _ = builder.HasIndex(r => r.MeterId);
         _ = builder.HasIndex(r => r.PropertyId);
         _ = builder.HasIndex(r => r.BillingPeriodId);

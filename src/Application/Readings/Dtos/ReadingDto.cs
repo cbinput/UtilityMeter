@@ -1,5 +1,7 @@
 namespace CleanMinimalApi.Application.Readings.Dtos;
 
+using CleanMinimalApi.Application.Alerts;
+
 public sealed record ReadingDto(
     Guid Id,
     Guid MeterId,
@@ -11,4 +13,5 @@ public sealed record ReadingDto(
     DateTimeOffset MeasuredAt,
     string Source,
     string Status,
-    List<Guid> EvidenceIds);
+    List<Guid> EvidenceIds,
+    List<Alert> Alerts);
