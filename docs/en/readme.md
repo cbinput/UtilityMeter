@@ -72,6 +72,17 @@ export ConnectionStrings__UtilityMeterDb='Data Source=/tmp/utilitymeter.db'
 export BACKGROUND_JOB_QUEUE_PATH='/tmp/utilitymeter-background-jobs'
 ```
 
+For evidence upload flows, either use Docker Compose or also configure object storage for both processes, for example with MinIO:
+
+```bash
+export ObjectStorage__Provider='Minio'
+export ObjectStorage__Minio__Endpoint='localhost:9000'
+export ObjectStorage__Minio__AccessKey='utilitymeter'
+export ObjectStorage__Minio__SecretKey='utilitymeter'
+export ObjectStorage__Minio__BucketName='utilitymeter-evidence'
+export ObjectStorage__Minio__UseSsl='false'
+```
+
 Start the API:
 
 ```bash
