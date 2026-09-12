@@ -54,18 +54,29 @@ To stop everything:
 docker compose down
 ```
 
-### Manual: .NET CLI (macOS/Linux example)
+### Manual: .NET CLI
 
-Use this when you want to run the API and Worker directly from the SDK. The commands below are shell examples for macOS/Linux.
+Use this when you want to run the API and Worker directly from the SDK.
 
-1. Export shared environment variables:
+1. Export shared environment variables.
+
+macOS/Linux:
 
 ```bash
 export ConnectionStrings__UtilityMeterDb='Data Source=/tmp/utilitymeter.db'
 export BACKGROUND_JOB_QUEUE_PATH='/tmp/utilitymeter-background-jobs'
 ```
 
+Windows PowerShell:
+
+```powershell
+$env:ConnectionStrings__UtilityMeterDb = "Data Source=$env:TEMP\\utilitymeter.db"
+$env:BACKGROUND_JOB_QUEUE_PATH = "$env:TEMP\\utilitymeter-background-jobs"
+```
+
 For evidence upload flows, either use Docker Compose or also point the API and Worker to a reachable object-storage service such as MinIO:
+
+macOS/Linux:
 
 ```bash
 export ObjectStorage__Provider='Minio'
@@ -74,6 +85,17 @@ export ObjectStorage__Minio__AccessKey='utilitymeter'
 export ObjectStorage__Minio__SecretKey='utilitymeter'
 export ObjectStorage__Minio__BucketName='utilitymeter-evidence'
 export ObjectStorage__Minio__UseSsl='false'
+```
+
+Windows PowerShell:
+
+```powershell
+$env:ObjectStorage__Provider = 'Minio'
+$env:ObjectStorage__Minio__Endpoint = 'localhost:9000'
+$env:ObjectStorage__Minio__AccessKey = 'utilitymeter'
+$env:ObjectStorage__Minio__SecretKey = 'utilitymeter'
+$env:ObjectStorage__Minio__BucketName = 'utilitymeter-evidence'
+$env:ObjectStorage__Minio__UseSsl = 'false'
 ```
 
 2. Start the API:

@@ -66,7 +66,7 @@ Infrastructure currently provides:
 - MinIO-backed object storage when configured
 - channel-based background job dispatch with JSON persistence under `BACKGROUND_JOB_QUEUE_PATH`
 
-When you run the API and Worker together, use a shared persistent database such as the SQLite file shown in the local setup instructions. In the current local setup, `BACKGROUND_JOB_QUEUE_PATH` must also be configured consistently for both processes. Treat the exact queue mechanics as an infrastructure detail behind `IBackgroundJobQueue`; the important contributor requirement is that API and Worker share the same runtime configuration for persistence and queued work. The in-memory fallback is only appropriate for isolated development runs where process-to-process shared state is not required.
+When you run the API and Worker together, use a shared persistent database such as the SQLite file shown in the local setup instructions. In the current local setup, `BACKGROUND_JOB_QUEUE_PATH` must also be configured consistently for both processes, and both processes must be able to reach the same underlying filesystem location. Treat the exact queue mechanics as an infrastructure detail behind `IBackgroundJobQueue`; the important contributor requirement is that API and Worker share the same runtime configuration for persistence and queued work. The in-memory fallback is only appropriate for isolated development runs where process-to-process shared state is not required.
 
 ### Worker
 

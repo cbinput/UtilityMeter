@@ -63,16 +63,27 @@ Para detenerlo:
 docker compose down
 ```
 
-### .NET CLI (ejemplo macOS/Linux)
+### .NET CLI
 
-Para desarrollo local sin contenedores, ejecuta la API y el Worker por separado usando la misma base y la misma ruta de cola. Los comandos siguientes son ejemplos de shell para macOS/Linux.
+Para desarrollo local sin contenedores, ejecuta la API y el Worker por separado usando la misma base y la misma ruta de cola.
+
+macOS/Linux:
 
 ```bash
 export ConnectionStrings__UtilityMeterDb='Data Source=/tmp/utilitymeter.db'
 export BACKGROUND_JOB_QUEUE_PATH='/tmp/utilitymeter-background-jobs'
 ```
 
+Windows PowerShell:
+
+```powershell
+$env:ConnectionStrings__UtilityMeterDb = "Data Source=$env:TEMP\\utilitymeter.db"
+$env:BACKGROUND_JOB_QUEUE_PATH = "$env:TEMP\\utilitymeter-background-jobs"
+```
+
 Para probar flujos de carga de evidencia, usa Docker Compose o configura también object storage para ambos procesos, por ejemplo con MinIO:
+
+macOS/Linux:
 
 ```bash
 export ObjectStorage__Provider='Minio'
@@ -81,6 +92,17 @@ export ObjectStorage__Minio__AccessKey='utilitymeter'
 export ObjectStorage__Minio__SecretKey='utilitymeter'
 export ObjectStorage__Minio__BucketName='utilitymeter-evidence'
 export ObjectStorage__Minio__UseSsl='false'
+```
+
+Windows PowerShell:
+
+```powershell
+$env:ObjectStorage__Provider = 'Minio'
+$env:ObjectStorage__Minio__Endpoint = 'localhost:9000'
+$env:ObjectStorage__Minio__AccessKey = 'utilitymeter'
+$env:ObjectStorage__Minio__SecretKey = 'utilitymeter'
+$env:ObjectStorage__Minio__BucketName = 'utilitymeter-evidence'
+$env:ObjectStorage__Minio__UseSsl = 'false'
 ```
 
 Levantar la API:
