@@ -5,10 +5,16 @@ using CleanMinimalApi.Application.Alerts;
 public class Reading
 {
     public Guid Id { get; init; } = Guid.NewGuid();
+    public Guid MeterId { get; set; }
+    public Guid? PropertyId { get; set; }
+    public Guid? BillingPeriodId { get; set; }
+    public Guid? PreviousReadingId { get; set; }
     public decimal Value { get; set; }
+    public string Unit { get; set; } = string.Empty;
     public DateTimeOffset MeasuredAt { get; set; }
     public string Source { get; set; } = "Manual";
     public string Status { get; set; } = "Pending";
+    public List<Guid> EvidenceIds { get; set; } = [];
 
     public static decimal CalculateConsumption(Reading previous, Reading current)
     {
