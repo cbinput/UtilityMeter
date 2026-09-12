@@ -16,7 +16,7 @@ flowchart LR
     Client[Usuario o integración] --> API[Presentation API]
     API --> App[Application]
     App --> Infra[Infrastructure]
-    Infra --> Db[(SQLite / EF Core)]
+    Infra --> Db[(Base de datos vía EF Core)]
     Infra --> Storage[(MinIO o almacenamiento en memoria)]
     API --> Queue[IBackgroundJobQueue]
     Queue --> Worker[Worker service]
@@ -61,7 +61,7 @@ Los resultados de negocio, como alertas, se registran dentro del flujo de lectur
 
 Infrastructure hoy aporta:
 - acceso a datos con EF Core
-- SQLite cuando existe connection string
+- persistencia configurable a base de datos mediante EF Core
 - base en memoria cuando no hay connection string
 - object storage con MinIO cuando está configurado
 - despacho mediante `Channel` con persistencia de trabajos en JSON bajo `BACKGROUND_JOB_QUEUE_PATH`

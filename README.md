@@ -37,7 +37,7 @@ More detail and diagrams:
 
 ### Recommended: Docker Compose
 
-This is the fastest way to run the full stack with the API, Worker, SQLite-backed persistence, and MinIO object storage.
+This is the fastest way to run the full stack with the API, Worker, shared persistence, and MinIO object storage.
 
 ```bash
 docker compose up --build
