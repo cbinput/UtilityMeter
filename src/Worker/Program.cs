@@ -4,7 +4,7 @@ using CleanMinimalApi.Worker;
 
 var host = Host.CreateApplicationBuilder(args);
 
-host.Services.AddInfrastructure();
+host.Services.AddInfrastructure(host.Configuration);
 host.Services.AddApplication();
 host.Services.AddHostedService<QueuedBackgroundWorker>();
 

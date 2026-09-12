@@ -1,5 +1,7 @@
 namespace CleanMinimalApi.Presentation.Endpoints;
 
+using CleanMinimalApi.Application.BackgroundJobs;
+using CleanMinimalApi.Application.BackgroundJobs.Commands;
 using CleanMinimalApi.Application.Reports.Dtos;
 using CleanMinimalApi.Application.Reports.Queries.GetAbnormalReadings;
 using CleanMinimalApi.Application.Reports.Queries.GetCondominiumReconciliation;
@@ -28,6 +30,15 @@ public static class ReportEndpoints
         _ = root.MapGet("/condominiums/{condominiumId}/reconciliation/{billingPeriodId}", GetCondominiumReconciliation)
             .Produces<CondominiumReconciliationDto>()
             .WithSummary("Reconcile the main meter with property sub-meters");
+        _ = root.MapPost("/monthly-summary/{billingPeriodId}/generate", QueueMonthlySummaryGeneration)
+            .Produces<QueuedBackgroundJobResponse>(StatusCodes.Status202Accepted)
+            .WithSummary("Queue monthly summary generation");
+        _ = root.MapPost("/abnormal-readings/{billingPeriodId}/analyze", QueueAnomalyAnalysis)
+            .Produces<QueuedBackgroundJobResponse>(StatusCodes.Status202Accepted)
+            .WithSummary("Queue anomaly analysis");
+        _ = root.MapPost("/exports/{billingPeriodId}", QueueBillingPeriodExport)
+            .Produces<QueuedBackgroundJobResponse>(StatusCodes.Status202Accepted)
+            .WithSummary("Queue report export");
 
         return app;
     }
@@ -67,4 +78,39 @@ public static class ReportEndpoints
             new GetCondominiumReconciliationQuery(condominiumId, billingPeriodId),
             cancellationToken));
     }
+
+    public static async Task<Accepted<QueuedBackgroundJobResponse>> QueueMonthlySummaryGeneration(
+        Guid billingPeriodId,
+        ISender sender,
+        CancellationToken cancellationToken)
+    {
+        await sender.Send(new EnqueueReportGenerationJobCommand(billingPeriodId), cancellationToken);
+        return TypedResults.Accepted(
+            $"/api/reports/monthly-summary/{billingPeriodId}",
+            new QueuedBackgroundJobResponse(BackgroundJobTypes.ReportGeneration, "queued"));
+    }
+
+    public static async Task<Accepted<QueuedBackgroundJobResponse>> QueueAnomalyAnalysis(
+        Guid billingPeriodId,
+        ISender sender,
+        CancellationToken cancellationToken)
+    {
+        await sender.Send(new EnqueueAnomalyAnalysisJobCommand(billingPeriodId), cancellationToken);
+        return TypedResults.Accepted(
+            $"/api/reports/abnormal-readings?billingPeriodId={billingPeriodId}",
+            new QueuedBackgroundJobResponse(BackgroundJobTypes.AnomalyAnalysis, "queued"));
+    }
+
+    public static async Task<Accepted<QueuedBackgroundJobResponse>> QueueBillingPeriodExport(
+        Guid billingPeriodId,
+        ISender sender,
+        CancellationToken cancellationToken)
+    {
+        await sender.Send(new EnqueueExportJobCommand(billingPeriodId), cancellationToken);
+        return TypedResults.Accepted(
+            $"/api/reports/monthly-summary/{billingPeriodId}",
+            new QueuedBackgroundJobResponse(BackgroundJobTypes.Export, "queued"));
+    }
 }
+
+public sealed record QueuedBackgroundJobResponse(string JobType, string Status);
