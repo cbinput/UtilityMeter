@@ -62,7 +62,7 @@ Business outcomes such as alerts are recorded in the reading/report flow instead
 Infrastructure currently provides:
 - EF Core data access
 - configurable database persistence through EF Core
-- in-memory database fallback when no connection string is present
+- development-time in-memory database fallback when no connection string is present
 - MinIO-backed object storage when configured
 - channel-based background job dispatch with JSON persistence under `BACKGROUND_JOB_QUEUE_PATH`
 

@@ -62,7 +62,7 @@ Los resultados de negocio, como alertas, se registran dentro del flujo de lectur
 Infrastructure hoy aporta:
 - acceso a datos con EF Core
 - persistencia configurable a base de datos mediante EF Core
-- base en memoria cuando no hay connection string
+- fallback de base en memoria para desarrollo cuando no hay connection string
 - object storage con MinIO cuando está configurado
 - despacho mediante `Channel` con persistencia de trabajos en JSON bajo `BACKGROUND_JOB_QUEUE_PATH`
 
