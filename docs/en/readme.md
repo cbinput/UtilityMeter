@@ -84,11 +84,7 @@ Start the Worker in a second terminal:
 dotnet run --project ./src/Worker
 ```
 
-Example API URLs from the current local launch profile:
-- `https://localhost:7032/swagger`
-- `http://localhost:5032/swagger`
-
-If the ports differ in your environment, check `src/Presentation/Properties/launchSettings.json`.
+Use the URLs printed by `dotnet run`, or check `src/Presentation/Properties/launchSettings.json` for the current local profile values.
 
 ## Project layout
 

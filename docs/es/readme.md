@@ -84,11 +84,7 @@ Levantar el Worker en otra terminal:
 dotnet run --project ./src/Worker
 ```
 
-URLs locales de ejemplo según el perfil de lanzamiento actual:
-- `https://localhost:7032/swagger`
-- `http://localhost:5032/swagger`
-
-Si en tu entorno cambian los puertos, revisa `src/Presentation/Properties/launchSettings.json`.
+Usa las URLs que imprime `dotnet run`, o revisa `src/Presentation/Properties/launchSettings.json` para ver los valores actuales del perfil local.
 
 ## Estructura del proyecto
 
