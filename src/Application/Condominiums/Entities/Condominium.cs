@@ -6,6 +6,6 @@ public class Condominium
     public Guid? OrganizationId { get; set; }
     public string Name { get; set; } = string.Empty;
     public string Address { get; set; } = string.Empty;
-    public List<Guid> PropertyIds { get; set; } = new();
+    public List<Guid> PropertyIds { get; set; } = [];
     public Guid? MainMeterId { get; set; }
 }
