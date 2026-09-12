@@ -15,15 +15,17 @@ public class GetMonthlySummaryHandlerTests
         var billingPeriodId = Guid.NewGuid();
         var meterOne = Guid.NewGuid();
         var meterTwo = Guid.NewGuid();
+        var propertyOne = Guid.NewGuid();
+        var propertyTwo = Guid.NewGuid();
         var repository = Substitute.For<IReadingsRepository>();
 
         repository.GetByBillingPeriodIdAsync(billingPeriodId, Arg.Any<CancellationToken>())
             .Returns(
             [
-                new Reading { MeterId = meterOne, BillingPeriodId = billingPeriodId, PropertyId = Guid.NewGuid(), Source = "Resident", Value = 100m, MeasuredAt = DateTimeOffset.UtcNow },
-                new Reading { MeterId = meterOne, BillingPeriodId = billingPeriodId, PropertyId = Guid.NewGuid(), Source = "Company", Value = 110m, MeasuredAt = DateTimeOffset.UtcNow },
-                new Reading { MeterId = meterTwo, BillingPeriodId = billingPeriodId, PropertyId = Guid.NewGuid(), Source = "Resident", Value = 200m, MeasuredAt = DateTimeOffset.UtcNow },
-                new Reading { MeterId = meterTwo, BillingPeriodId = billingPeriodId, PropertyId = Guid.NewGuid(), Source = "Company", Value = 190m, MeasuredAt = DateTimeOffset.UtcNow }
+                new Reading { MeterId = meterOne, BillingPeriodId = billingPeriodId, PropertyId = propertyOne, Source = "Resident", Value = 100m, MeasuredAt = DateTimeOffset.UtcNow },
+                new Reading { MeterId = meterOne, BillingPeriodId = billingPeriodId, PropertyId = propertyOne, Source = "Company", Value = 110m, MeasuredAt = DateTimeOffset.UtcNow },
+                new Reading { MeterId = meterTwo, BillingPeriodId = billingPeriodId, PropertyId = propertyTwo, Source = "Resident", Value = 200m, MeasuredAt = DateTimeOffset.UtcNow },
+                new Reading { MeterId = meterTwo, BillingPeriodId = billingPeriodId, PropertyId = propertyTwo, Source = "Company", Value = 190m, MeasuredAt = DateTimeOffset.UtcNow }
             ]);
 
         var handler = new GetMonthlySummaryHandler(repository);
