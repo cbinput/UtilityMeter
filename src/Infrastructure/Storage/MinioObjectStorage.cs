@@ -24,6 +24,7 @@ internal sealed class MinioObjectStorage(IOptions<MinioStorageOptions> options) 
         await this.EnsureBucketExistsAsync(cancellationToken);
 
         var streamToUpload = await ToSeekableStreamAsync(content, cancellationToken);
+        streamToUpload.Seek(0, SeekOrigin.Begin);
         var size = streamToUpload.Length - streamToUpload.Position;
 
         var putObjectArgs = new PutObjectArgs()
@@ -95,7 +96,18 @@ internal sealed class MinioObjectStorage(IOptions<MinioStorageOptions> options) 
         }
 
         var makeBucketArgs = new MakeBucketArgs().WithBucket(this.options.BucketName);
-        await this.Client.MakeBucketAsync(makeBucketArgs, cancellationToken);
+        try
+        {
+            await this.Client.MakeBucketAsync(makeBucketArgs, cancellationToken);
+        }
+        catch (MinioException)
+        {
+            var existsAfterError = await this.Client.BucketExistsAsync(bucketExistsArgs, cancellationToken);
+            if (!existsAfterError)
+            {
+                throw;
+            }
+        }
     }
 
     private static async Task<Stream> ToSeekableStreamAsync(Stream source, CancellationToken cancellationToken)

@@ -1,19 +1,6 @@
 version: "3.9"
 
 services:
-  postgres:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_DB: utilitymeter
-      POSTGRES_USER: utilitymeter
-      POSTGRES_PASSWORD: utilitymeter
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    networks:
-      - utilitymeter_network
-
   minio:
     image: minio/minio:RELEASE.2026-07-23T15-54-02Z
     command: server /data --console-address ":9001"
@@ -40,7 +27,8 @@ services:
       - "8081:443"
     environment:
       DOTNET_ENVIRONMENT: docker
-      ConnectionStrings__UtilityMeterDb: Host=postgres;Port=5432;Database=utilitymeter;Username=utilitymeter;******
+      ConnectionStrings__UtilityMeterDb: Data Source=/data/utilitymeter.db
+      BACKGROUND_JOB_QUEUE_PATH: /data/background-jobs
       ObjectStorage__Provider: Minio
       ObjectStorage__Minio__Endpoint: minio:9000
       ObjectStorage__Minio__AccessKey: utilitymeter
@@ -48,10 +36,11 @@ services:
       ObjectStorage__Minio__BucketName: utilitymeter-evidence
       ObjectStorage__Minio__UseSsl: "false"
     depends_on:
-      - postgres
       - minio
     networks:
       - utilitymeter_network
+    volumes:
+      - utilitymeter_data:/data
 
   worker:
     build:
@@ -62,7 +51,8 @@ services:
         VERSION_SUFFIX: docker
     environment:
       DOTNET_ENVIRONMENT: docker
-      ConnectionStrings__UtilityMeterDb: Host=postgres;Port=5432;Database=utilitymeter;Username=utilitymeter;******
+      ConnectionStrings__UtilityMeterDb: Data Source=/data/utilitymeter.db
+      BACKGROUND_JOB_QUEUE_PATH: /data/background-jobs
       ObjectStorage__Provider: Minio
       ObjectStorage__Minio__Endpoint: minio:9000
       ObjectStorage__Minio__AccessKey: utilitymeter
@@ -70,15 +60,16 @@ services:
       ObjectStorage__Minio__BucketName: utilitymeter-evidence
       ObjectStorage__Minio__UseSsl: "false"
     depends_on:
-      - postgres
       - minio
     networks:
       - utilitymeter_network
+    volumes:
+      - utilitymeter_data:/data
 
 networks:
   utilitymeter_network:
     driver: bridge
 
 volumes:
-  postgres_data:
   minio_data:
+  utilitymeter_data:

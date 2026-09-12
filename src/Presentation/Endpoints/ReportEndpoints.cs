@@ -108,7 +108,7 @@ public static class ReportEndpoints
     {
         await sender.Send(new EnqueueExportJobCommand(billingPeriodId), cancellationToken);
         return TypedResults.Accepted(
-            $"/api/reports/monthly-summary/{billingPeriodId}",
+            $"/api/reports/exports/{billingPeriodId}",
             new QueuedBackgroundJobResponse(BackgroundJobTypes.Export, "queued"));
     }
 }

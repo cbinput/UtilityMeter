@@ -4,11 +4,13 @@ namespace CleanMinimalApi.Application.BackgroundJobs;
 
 public interface IBackgroundJobQueue
 {
-    public ValueTask QueueAsync(string jobType, Func<CancellationToken, Task> workItem, CancellationToken cancellationToken = default);
+    public ValueTask QueueAsync(BackgroundJob job, CancellationToken cancellationToken = default);
 
     public IAsyncEnumerable<BackgroundJob> DequeueAsync(CancellationToken cancellationToken);
+
+    public Task CompleteAsync(Guid jobId, bool succeeded, CancellationToken cancellationToken = default);
 }
 
 #pragma warning restore CA1711
 
-public sealed record BackgroundJob(string JobType, Func<CancellationToken, Task> WorkItem);
+public sealed record BackgroundJob(Guid Id, string JobType, string Payload, DateTimeOffset EnqueuedAt);

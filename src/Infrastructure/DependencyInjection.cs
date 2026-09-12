@@ -17,8 +17,17 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration? configuration = null)
     {
-        _ = services.AddDbContext<UtilityMeterDbContext>(options =>
-            options.UseInMemoryDatabase($"UtilityMeter-{Guid.NewGuid()}"));
+        var connectionString = configuration?.GetConnectionString("UtilityMeterDb");
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            _ = services.AddDbContext<UtilityMeterDbContext>(options =>
+                options.UseInMemoryDatabase($"UtilityMeter-{Guid.NewGuid()}"));
+        }
+        else
+        {
+            _ = services.AddDbContext<UtilityMeterDbContext>(options =>
+                options.UseSqlite(connectionString));
+        }
 
         _ = services.AddScoped<EntityFrameworkReadingsRepository>();
         _ = services.AddScoped<EntityFrameworkEvidenceRepository>();
@@ -55,6 +64,7 @@ public static class DependencyInjection
         }
 
         _ = services.AddSingleton(TimeProvider.System);
+        _ = services.AddHostedService<DatabaseInitializationHostedService>();
 
         return services;
     }

@@ -16,13 +16,12 @@ public sealed record EnqueueExportJobCommand(Guid BillingPeriodId) : IRequest;
 public sealed record ProcessOcrExtractionJobCommand(Guid EvidenceId) : IRequest;
 public sealed record ProcessReportGenerationJobCommand(Guid BillingPeriodId) : IRequest;
 public sealed record ProcessAnomalyAnalysisJobCommand(Guid BillingPeriodId) : IRequest;
-public sealed record ProcessExportJobCommand(Guid BillingPeriodId) : IRequest;
+public sealed record ProcessExportJobCommand(Guid BillingPeriodId, Guid JobId) : IRequest;
 
-public sealed class EnqueueOcrExtractionJobHandler(IBackgroundJobQueue queue, ISender sender, ILogger logger)
+public sealed class EnqueueOcrExtractionJobHandler(IBackgroundJobQueue queue, ILogger logger)
     : IRequestHandler<EnqueueOcrExtractionJobCommand>
 {
     private readonly IBackgroundJobQueue queue = queue ?? throw new ArgumentNullException(nameof(queue));
-    private readonly ISender sender = sender ?? throw new ArgumentNullException(nameof(sender));
     private readonly ILogger logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
     public async Task<Unit> Handle(EnqueueOcrExtractionJobCommand request, CancellationToken cancellationToken)
@@ -30,19 +29,21 @@ public sealed class EnqueueOcrExtractionJobHandler(IBackgroundJobQueue queue, IS
         this.logger.Information("Queueing OCR extraction job for evidence {EvidenceId}", request.EvidenceId);
 
         await this.queue.QueueAsync(
-            BackgroundJobTypes.OcrExtraction,
-            token => this.sender.Send(new ProcessOcrExtractionJobCommand(request.EvidenceId), token),
+            new BackgroundJob(
+                Guid.NewGuid(),
+                BackgroundJobTypes.OcrExtraction,
+                JsonSerializer.Serialize(new OcrExtractionJobPayload(request.EvidenceId)),
+                DateTimeOffset.UtcNow),
             cancellationToken);
 
         return Unit.Value;
     }
 }
 
-public sealed class EnqueueReportGenerationJobHandler(IBackgroundJobQueue queue, ISender sender, ILogger logger)
+public sealed class EnqueueReportGenerationJobHandler(IBackgroundJobQueue queue, ILogger logger)
     : IRequestHandler<EnqueueReportGenerationJobCommand>
 {
     private readonly IBackgroundJobQueue queue = queue ?? throw new ArgumentNullException(nameof(queue));
-    private readonly ISender sender = sender ?? throw new ArgumentNullException(nameof(sender));
     private readonly ILogger logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
     public async Task<Unit> Handle(EnqueueReportGenerationJobCommand request, CancellationToken cancellationToken)
@@ -50,19 +51,21 @@ public sealed class EnqueueReportGenerationJobHandler(IBackgroundJobQueue queue,
         this.logger.Information("Queueing report generation job for billing period {BillingPeriodId}", request.BillingPeriodId);
 
         await this.queue.QueueAsync(
-            BackgroundJobTypes.ReportGeneration,
-            token => this.sender.Send(new ProcessReportGenerationJobCommand(request.BillingPeriodId), token),
+            new BackgroundJob(
+                Guid.NewGuid(),
+                BackgroundJobTypes.ReportGeneration,
+                JsonSerializer.Serialize(new ReportGenerationJobPayload(request.BillingPeriodId)),
+                DateTimeOffset.UtcNow),
             cancellationToken);
 
         return Unit.Value;
     }
 }
 
-public sealed class EnqueueAnomalyAnalysisJobHandler(IBackgroundJobQueue queue, ISender sender, ILogger logger)
+public sealed class EnqueueAnomalyAnalysisJobHandler(IBackgroundJobQueue queue, ILogger logger)
     : IRequestHandler<EnqueueAnomalyAnalysisJobCommand>
 {
     private readonly IBackgroundJobQueue queue = queue ?? throw new ArgumentNullException(nameof(queue));
-    private readonly ISender sender = sender ?? throw new ArgumentNullException(nameof(sender));
     private readonly ILogger logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
     public async Task<Unit> Handle(EnqueueAnomalyAnalysisJobCommand request, CancellationToken cancellationToken)
@@ -70,28 +73,34 @@ public sealed class EnqueueAnomalyAnalysisJobHandler(IBackgroundJobQueue queue, 
         this.logger.Information("Queueing anomaly analysis job for billing period {BillingPeriodId}", request.BillingPeriodId);
 
         await this.queue.QueueAsync(
-            BackgroundJobTypes.AnomalyAnalysis,
-            token => this.sender.Send(new ProcessAnomalyAnalysisJobCommand(request.BillingPeriodId), token),
+            new BackgroundJob(
+                Guid.NewGuid(),
+                BackgroundJobTypes.AnomalyAnalysis,
+                JsonSerializer.Serialize(new AnomalyAnalysisJobPayload(request.BillingPeriodId)),
+                DateTimeOffset.UtcNow),
             cancellationToken);
 
         return Unit.Value;
     }
 }
 
-public sealed class EnqueueExportJobHandler(IBackgroundJobQueue queue, ISender sender, ILogger logger)
+public sealed class EnqueueExportJobHandler(IBackgroundJobQueue queue, ILogger logger)
     : IRequestHandler<EnqueueExportJobCommand>
 {
     private readonly IBackgroundJobQueue queue = queue ?? throw new ArgumentNullException(nameof(queue));
-    private readonly ISender sender = sender ?? throw new ArgumentNullException(nameof(sender));
     private readonly ILogger logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
     public async Task<Unit> Handle(EnqueueExportJobCommand request, CancellationToken cancellationToken)
     {
         this.logger.Information("Queueing export job for billing period {BillingPeriodId}", request.BillingPeriodId);
+        var jobId = Guid.NewGuid();
 
         await this.queue.QueueAsync(
-            BackgroundJobTypes.Export,
-            token => this.sender.Send(new ProcessExportJobCommand(request.BillingPeriodId), token),
+            new BackgroundJob(
+                jobId,
+                BackgroundJobTypes.Export,
+                JsonSerializer.Serialize(new ExportJobPayload(request.BillingPeriodId, jobId)),
+                DateTimeOffset.UtcNow),
             cancellationToken);
 
         return Unit.Value;
@@ -158,7 +167,7 @@ public sealed class ProcessExportJobHandler(ISender sender, IObjectStorage objec
         var summary = await this.sender.Send(new GetMonthlySummaryQuery(request.BillingPeriodId), cancellationToken);
         var payload = JsonSerializer.SerializeToUtf8Bytes(summary);
         await using var stream = new MemoryStream(payload);
-        var key = $"exports/{request.BillingPeriodId}/monthly-summary.json";
+        var key = $"exports/{request.BillingPeriodId}/monthly-summary-{request.JobId:N}.json";
         var uploadedKey = await this.objectStorage.UploadAsync(stream, key, "application/json", cancellationToken);
 
         this.logger.Information("Processed export job for billing period {BillingPeriodId} and stored output at {StorageKey}", request.BillingPeriodId, uploadedKey);
