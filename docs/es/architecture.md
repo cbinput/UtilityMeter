@@ -66,6 +66,8 @@ Infrastructure hoy aporta:
 - object storage con MinIO cuando está configurado
 - despacho mediante `Channel` con persistencia de trabajos en JSON bajo `BACKGROUND_JOB_QUEUE_PATH`
 
+Si ejecutas la API y el Worker al mismo tiempo, necesitas una base persistente compartida, como el archivo SQLite mostrado en las instrucciones locales. El fallback en memoria solo sirve para ejecuciones aisladas de desarrollo donde no hace falta compartir estado entre procesos.
+
 ### Worker
 
 El Worker es un host separado que procesa trabajos para:
