@@ -1,85 +1,136 @@
-# Clean Minimal API
+# UtilityMeter
 
-[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/stphnwlsh/cleanminimalapi/build-pipeline.yml?label=Build%20Pipeline%20&logo=github&style=for-the-badge)](https://github.com/stphnwlsh/CleanMinimalApi/actions/workflows/build-pipeline.yml)
-[![Codecov](https://img.shields.io/codecov/c/github/stphnwlsh/CleanMinimalApi?label=Code%20Coverage&logo=codecov&logoColor=white&style=for-the-badge)](https://codecov.io/gh/stphnwlsh/CleanMinimalApi)
-[![Nuget](https://img.shields.io/nuget/v/CleanMinimalApi.Template?label=nuget%20template&logo=nuget&logoColor=white&style=for-the-badge)](https://www.nuget.org/packages/CleanMinimalApi.Template/)
-[![GitHub Sponsors](https://img.shields.io/static/v1?label=GitHub%20Sponsors&message=$1&logo=githubsponsors&logoColor=white&color=ea4aaa&style=for-the-badge)](https://github.com/sponsors/stphnwlsh/sponsorships?sponsor=stphnwlsh&tier_id=333950)
-[![Buy Me A Coffee](https://img.shields.io/static/v1?label=Buy%20Me%20A%20Coffee&message=$1&logo=buymeacoffee&logoColor=white&color=ffdd00&style=for-the-badge)](https://www.buymeacoffee.com/stphnwlsh)
+UtilityMeter is a residential utility metering platform for water, electricity, gas, and other resource types. It helps individual households and condominiums record readings, keep evidence, detect anomalies, and compare resident readings with company readings without mixing measurement, consumption, billing, and proration into a single concept.
 
-This is a template API using a streamlined version of [Clean Architecture](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html) alongside .NET's [Minimal APIs](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis?view=aspnetcore-10.0).
+## Language
 
-## Prerequisites
+- English docs: [/docs/en/readme.md](./docs/en/readme.md)
+- Documentación en español: [/docs/es/readme.md](./docs/es/readme.md)
 
-This solution in built on the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0), you need to install that before it will work for you.  If you want to build the Dockerfile you will need to install [Docker](https://www.docker.com/products/docker-desktop) as well.
+## What it solves
 
-## Installation
+- Replaces ad-hoc spreadsheets, chat messages, and photo folders with traceable meter records.
+- Keeps meter readings and evidence auditable, even when the utility bill and the resident reading do not match.
+- Helps condominiums reconcile a main meter against sub-meters and identify suspect properties.
+- Supports asynchronous processing for heavier tasks such as OCR, anomaly analysis, exports, and report generation.
 
-This is a template and you can install it using the [dotnet new cli](https://docs.microsoft.com/en-us/dotnet/core/tools/dotnet-new).  To install the lastest version of the template run the following command.
+## What the software does
 
-``` bash
-dotnet new install CleanMinimalApi.Template
-```
+- Registers meter readings per property, meter, and billing period.
+- Calculates consumption from the previous reading.
+- Stores immutable evidence references for photos and PDFs.
+- Flags suspicious situations such as decreased readings or abnormally high consumption.
+- Exposes reporting endpoints for pending readings, abnormal readings, monthly summaries, and condominium reconciliation.
 
-To create a new solution using this template run the following command
+## Architecture at a glance
+
+- **Presentation**: Minimal API endpoints and OpenAPI/Swagger.
+- **Application**: Domain rules, commands, queries, validation, and MediatR handlers.
+- **Infrastructure**: EF Core persistence, object storage, and background job queue implementations.
+- **Worker**: Background host that processes queued jobs.
+
+More detail and diagrams:
+- [/docs/en/architecture.md](./docs/en/architecture.md)
+- [/docs/es/architecture.md](./docs/es/architecture.md)
+
+## Run locally
+
+### Recommended: Docker Compose
+
+This is the fastest way to run the full stack with the API, Worker, shared persistence, and MinIO object storage.
 
 ```bash
-dotnet new cleanminimalapi --name {YOUR_SOLUTION_NAMESPACE} --au "{YOU_AUTHORS_NAME}"
+docker compose up --build
 ```
 
-## Docker
+Useful Docker Compose URLs:
+- API / Swagger: http://localhost:8080/swagger
+- MinIO API: http://localhost:9000
+- MinIO Console: http://localhost:9001
 
-There's a dockerfile included in the build folder and serves the purpose of restoring, building, testing, publishing and then creating a runtime image of the API.  Works on my machine.....you can add a version prefix and suffix to version the service in the assembly.  The Dockerfile does have stages so you can just run the tests or publish the solution depending on your needs.  Review the `build-pipeline.yml` in the github folder for more detailed usage.
+To stop everything:
 
-``` bash
-docker build . -t cleanminimalapi:latest --build-arg VERSION_PREFIX {VERSION_NUMBER} -- build-arg VERSION_SUFFIX {PRERELEASE_NAME}
+```bash
+docker compose down
 ```
 
-The Github Action does publish an image of this API and you check it out for yourself by runnning this command in docker.
+### Manual: .NET CLI
 
-``` bash
-docker pull stphnwlsh/cleanminimalapi
+Use this when you want to run the API and Worker directly from the SDK.
+
+1. Export shared environment variables.
+
+macOS/Linux:
+
+```bash
+export ConnectionStrings__UtilityMeterDb='Data Source=/tmp/utilitymeter.db'
+export BACKGROUND_JOB_QUEUE_PATH='/tmp/utilitymeter-background-jobs'
 ```
 
-## Architecture
+Windows PowerShell:
 
-This solution is loosely based on Clean Architecture patterns, it's by no means perfect.  I prefer to call it "Lean Mean Clean Architecture".  Inspiration has been taken from [Jason Taylor's Clean Architecture Template](https://github.com/jasontaylordev/CleanArchitecture), but I have made some structural decisions to take some things further and scaled back others.
+```powershell
+$env:ConnectionStrings__UtilityMeterDb = "Data Source=$env:TEMP\\utilitymeter.db"
+$env:BACKGROUND_JOB_QUEUE_PATH = "$env:TEMP\\utilitymeter-background-jobs"
+```
 
-There's a little CQRS type stuff going on here but it's more in style than real separated functions for reading and writing as under the covers they are the same data source.
+For evidence upload flows, either use Docker Compose or also point the API and Worker to a reachable object-storage service such as MinIO:
 
-Breaking the Clean Architecture pattern is the fact that the Infrastructure project is referenced by the Presentation project.  This is for **Dependency Injection** purposes, so to protect this a little further, all classes in the Infrastructure project are `internal`.  This stops them being accidentally used in the Presentation project.
+macOS/Linux:
 
-### Project Structure
+```bash
+export ObjectStorage__Provider='Minio'
+export ObjectStorage__Minio__Endpoint='localhost:9000'
+export ObjectStorage__Minio__AccessKey='utilitymeter'
+export ObjectStorage__Minio__SecretKey='utilitymeter'
+export ObjectStorage__Minio__BucketName='utilitymeter-evidence'
+export ObjectStorage__Minio__UseSsl='false'
+```
 
-It's streamlined into 4 functional projects.  All serve their own purpose and segregate aspects of the application to allow easier replacement and updating.
+Windows PowerShell:
 
-1. **Presentation** - Setting up the interactions between the Application layer and the consumer.  In the project that's via a Minimal API but it could be many other things.  The Minimal API uses endpoints to funnel the actions to the layer that owns the domain.
-1. **Application** - This project owns the domain and business logic.  There's validation of the Commands and Queries and handling of domain entities in their own separated structures.  Each domain type has it's own interface to a datasource downstream, this project doesn't care what fulfills this contract, as long as someone does.
-1. **Infrastructure** - Here's where the database comes into play.  Infra owns the data objects and works with the repository interfaces to fetch, create, update and remove object from the source.  There's some entity mapping here to allow specific models with attributes to remain in this layer and not bleed through to the **Application** layer.
-1. **Worker** - Background host that dequeues asynchronous jobs (OCR/extraction, anomaly analysis, report generation, export) and executes the related Application commands.
+```powershell
+$env:ObjectStorage__Provider = 'Minio'
+$env:ObjectStorage__Minio__Endpoint = 'localhost:9000'
+$env:ObjectStorage__Minio__AccessKey = 'utilitymeter'
+$env:ObjectStorage__Minio__SecretKey = 'utilitymeter'
+$env:ObjectStorage__Minio__BucketName = 'utilitymeter-evidence'
+$env:ObjectStorage__Minio__UseSsl = 'false'
+```
 
-## Features
+The application creates the configured MinIO bucket on demand if it does not already exist.
 
-There are plenty of handy implementations of features throughout this solution, in no particular order here are some that might interest you.
+2. Start the API:
 
-- Logging using [Serilog](https://github.com/serilog/serilog)
-- Mediator Pattern using [Mediatr](https://github.com/jbogard/MediatR)
-- Validation using [FluentValidation](https://github.com/FluentValidation/FluentValidation)
-- Testing using [Shouldly](https://github.com/shouldly/shouldly) and [NSubstitute](https://github.com/nsubstitute/NSubstitute)
-- OpenApi using [Swashbuckle](https://github.com/domaindrivendev/Swashbuckle.AspNetCore)
-- Object Mapping using [AutoMapper](https://github.com/AutoMapper/AutoMapper)
+```bash
+dotnet run --project ./src/Presentation
+```
 
-## Resources
+3. In another terminal, start the Worker:
 
-This sample would not have been possible without gaining inspiration from the following resources.  If you are on your own learning adventure please read the following blogs and documentation.
+```bash
+dotnet run --project ./src/Worker
+```
 
-- [David Fowler - Minimal APIs at a glance](https://gist.github.com/davidfowl/ff1addd02d239d2d26f4648a06158727)
-- [Damian Edwards - Minimal API Playground](https://github.com/DamianEdwards/MinimalApiPlayground)
-- [Scott Hanselman - Minimal APIs in .NET 6 but where are the Unit Tests?](https://www.hanselman.com/blog/minimal-apis-in-net-6-but-where-are-the-unit-tests)
-- [Andrew Lock - Reducing log verbosity with Serilog RequestLogging](https://andrewlock.net/using-serilog-aspnetcore-in-asp-net-core-3-reducing-log-verbosity/)
-- [Ben Foster - Minimal API validation with ASP.NET 7.0 Endpoint Filters](https://benfoster.io/blog/minimal-api-validation-endpoint-filters/)
+Use the URLs printed by `dotnet run`, or check `src/Presentation/Properties/launchSettings.json` for the current local profile values.
 
-## Connect and Support
+## Repository structure
 
-If you like this, or want to checkout my other work, please connect with me on [LinkedIn](https://www.linkedin.com/in/stphnwlsh), and/or follow me on [Medium](https://stphnwlsh.medium.com) or [GitHub](https://github.com/stphnwlsh).
+```text
+src/
+  Application/
+  Infrastructure/
+  Presentation/
+  Worker/
+tests/
+docs/
+  en/
+  es/
+```
 
-If you want to see more updates or more projects then please support me at [GitHub Sponsors](https://github.com/stphnwlsh) or [Buy Me A Coffee](https://www.buymeacoffee.com/stphnwlsh)
+## Current documentation
+
+- English overview: [/docs/en/readme.md](./docs/en/readme.md)
+- English architecture: [/docs/en/architecture.md](./docs/en/architecture.md)
+- Resumen en español: [/docs/es/readme.md](./docs/es/readme.md)
+- Arquitectura en español: [/docs/es/architecture.md](./docs/es/architecture.md)
