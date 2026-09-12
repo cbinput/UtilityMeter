@@ -131,7 +131,7 @@ sequenceDiagram
     API-->>User: % de diferencia, propiedades sospechosas y explicación
 ```
 
-## Vista de despliegue local
+## Vista local con Docker Compose
 
 ```mermaid
 flowchart TB
@@ -139,7 +139,7 @@ flowchart TB
         API[servicio api]
         Worker[servicio worker]
         MinIO[servicio minio]
-        Volume[(volumen compartido /data)]
+        Volume[(volumen utilitymeter_data montado en /data)]
     end
 
     API --> Volume
@@ -147,6 +147,8 @@ flowchart TB
     API --> MinIO
     Worker --> MinIO
 ```
+
+En ejecución local sin Docker, el requisito equivalente es compartir la misma configuración de runtime: ambos procesos necesitan la misma ruta de base de datos y el mismo `BACKGROUND_JOB_QUEUE_PATH`.
 
 ## Notas para contribuidores
 
