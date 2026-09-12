@@ -105,6 +105,8 @@ $env:ObjectStorage__Minio__BucketName = 'utilitymeter-evidence'
 $env:ObjectStorage__Minio__UseSsl = 'false'
 ```
 
+The application creates the configured MinIO bucket on demand if it does not already exist.
+
 Start the API:
 
 ```bash
