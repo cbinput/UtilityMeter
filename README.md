@@ -54,9 +54,9 @@ To stop everything:
 docker compose down
 ```
 
-### Manual: .NET CLI
+### Manual: .NET CLI (macOS/Linux example)
 
-Use this when you want to run the API and Worker directly from the SDK.
+Use this when you want to run the API and Worker directly from the SDK. The commands below are shell examples for macOS/Linux.
 
 1. Export shared environment variables:
 

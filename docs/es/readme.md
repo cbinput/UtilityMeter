@@ -63,9 +63,9 @@ Para detenerlo:
 docker compose down
 ```
 
-### .NET CLI
+### .NET CLI (ejemplo macOS/Linux)
 
-Para desarrollo local sin contenedores, ejecuta la API y el Worker por separado usando la misma base y la misma ruta de cola.
+Para desarrollo local sin contenedores, ejecuta la API y el Worker por separado usando la misma base y la misma ruta de cola. Los comandos siguientes son ejemplos de shell para macOS/Linux.
 
 ```bash
 export ConnectionStrings__UtilityMeterDb='Data Source=/tmp/utilitymeter.db'

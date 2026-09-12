@@ -63,9 +63,9 @@ Stop the stack:
 docker compose down
 ```
 
-### .NET CLI
+### .NET CLI (macOS/Linux example)
 
-For local development without containers, run API and Worker separately and share the same database and queue path.
+For local development without containers, run API and Worker separately and share the same database and queue path. The commands below are shell examples for macOS/Linux.
 
 ```bash
 export ConnectionStrings__UtilityMeterDb='Data Source=/tmp/utilitymeter.db'
