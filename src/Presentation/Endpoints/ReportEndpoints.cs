@@ -2,6 +2,7 @@ namespace CleanMinimalApi.Presentation.Endpoints;
 
 using CleanMinimalApi.Application.Reports.Dtos;
 using CleanMinimalApi.Application.Reports.Queries.GetAbnormalReadings;
+using CleanMinimalApi.Application.Reports.Queries.GetCondominiumReconciliation;
 using CleanMinimalApi.Application.Reports.Queries.GetMonthlySummary;
 using CleanMinimalApi.Application.Reports.Queries.GetPendingReadings;
 using MediatR;
@@ -24,6 +25,9 @@ public static class ReportEndpoints
         _ = root.MapGet("/monthly-summary/{billingPeriodId}", GetMonthlySummary)
             .Produces<MonthlySummaryDto>()
             .WithSummary("Summarize readings and resident-company mismatches");
+        _ = root.MapGet("/condominiums/{condominiumId}/reconciliation/{billingPeriodId}", GetCondominiumReconciliation)
+            .Produces<CondominiumReconciliationDto>()
+            .WithSummary("Reconcile the main meter with property sub-meters");
 
         return app;
     }
@@ -51,5 +55,16 @@ public static class ReportEndpoints
         CancellationToken cancellationToken)
     {
         return TypedResults.Ok(await sender.Send(new GetMonthlySummaryQuery(billingPeriodId), cancellationToken));
+    }
+
+    public static async Task<Ok<CondominiumReconciliationDto>> GetCondominiumReconciliation(
+        Guid condominiumId,
+        Guid billingPeriodId,
+        ISender sender,
+        CancellationToken cancellationToken)
+    {
+        return TypedResults.Ok(await sender.Send(
+            new GetCondominiumReconciliationQuery(condominiumId, billingPeriodId),
+            cancellationToken));
     }
 }

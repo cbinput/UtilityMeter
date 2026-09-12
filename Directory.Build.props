@@ -1,6 +1,10 @@
 <Project>
 
   <PropertyGroup>
+    <BaseOutputPath>$(MSBuildThisFileDirectory)artifacts\bin\$(MSBuildProjectName)\</BaseOutputPath>
+    <BaseIntermediateOutputPath>$(MSBuildThisFileDirectory)artifacts\obj\$(MSBuildProjectName)\</BaseIntermediateOutputPath>
+    <MSBuildProjectExtensionsPath>$(MSBuildThisFileDirectory)artifacts\obj\$(MSBuildProjectName)\</MSBuildProjectExtensionsPath>
+    <DefaultItemExcludes>$(DefaultItemExcludes);$(MSBuildThisFileDirectory)artifacts\**;**\bin\**;**\obj\**</DefaultItemExcludes>
     <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>CleanMinimalApi.$(AssemblyName)</RootNamespace>
     <PlatformTarget>AnyCPU</PlatformTarget>

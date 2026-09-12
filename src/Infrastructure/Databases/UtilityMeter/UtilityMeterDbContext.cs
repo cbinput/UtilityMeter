@@ -8,6 +8,7 @@ using Application.Meters.Entities;
 using Application.Organizations.Entities;
 using Application.Properties.Entities;
 using Application.Readings.Entities;
+using Application.Reports;
 using Microsoft.EntityFrameworkCore;
 
 internal class UtilityMeterDbContext(DbContextOptions<UtilityMeterDbContext> options) : DbContext(options)
