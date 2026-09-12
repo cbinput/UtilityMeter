@@ -66,7 +66,7 @@ Infrastructure hoy aporta:
 - object storage con MinIO cuando está configurado
 - despacho mediante `Channel` con persistencia de trabajos en JSON bajo `BACKGROUND_JOB_QUEUE_PATH`
 
-Si ejecutas la API y el Worker al mismo tiempo, necesitas una base persistente compartida, como el archivo SQLite mostrado en las instrucciones locales. `BACKGROUND_JOB_QUEUE_PATH` también debe apuntar al mismo directorio compartido para ambos procesos, de modo que los trabajos encolados sean visibles de punta a punta. El fallback en memoria solo sirve para ejecuciones aisladas de desarrollo donde no hace falta compartir estado entre procesos.
+Si ejecutas la API y el Worker al mismo tiempo, necesitas una base persistente compartida, como el archivo SQLite mostrado en las instrucciones locales. `BACKGROUND_JOB_QUEUE_PATH` también debe apuntar al mismo directorio compartido para ambos procesos, porque la implementación actual persiste cada trabajo como JSON en esa ruta y cada proceso consulta ese directorio además de su `Channel` en memoria. El fallback en memoria solo sirve para ejecuciones aisladas de desarrollo donde no hace falta compartir estado entre procesos.
 
 ### Worker
 
