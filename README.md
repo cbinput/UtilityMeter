@@ -43,7 +43,7 @@ This is the fastest way to run the full stack with the API, Worker, shared persi
 docker compose up --build
 ```
 
-Useful URLs:
+Useful Docker Compose URLs:
 - API / Swagger: http://localhost:8080/swagger
 - MinIO API: http://localhost:9000
 - MinIO Console: http://localhost:9001
