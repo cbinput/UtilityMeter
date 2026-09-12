@@ -88,7 +88,7 @@ Example API URLs from the current local launch profile:
 - `https://localhost:7032/swagger`
 - `http://localhost:5032/swagger`
 
-If the ports differ in your environment, check `/home/runner/work/UtilityMeter/UtilityMeter/src/Presentation/Properties/launchSettings.json`.
+If the ports differ in your environment, check `src/Presentation/Properties/launchSettings.json`.
 
 ## Project layout
 

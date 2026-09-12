@@ -88,7 +88,7 @@ URLs locales de ejemplo según el perfil de lanzamiento actual:
 - `https://localhost:7032/swagger`
 - `http://localhost:5032/swagger`
 
-Si en tu entorno cambian los puertos, revisa `/home/runner/work/UtilityMeter/UtilityMeter/src/Presentation/Properties/launchSettings.json`.
+Si en tu entorno cambian los puertos, revisa `src/Presentation/Properties/launchSettings.json`.
 
 ## Estructura del proyecto
 
