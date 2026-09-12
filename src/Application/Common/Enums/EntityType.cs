@@ -2,7 +2,13 @@ namespace CleanMinimalApi.Application.Common.Enums;
 
 public enum EntityType
 {
-    Author,
-    Movie,
-    Review
+    Organization,
+    Condominium,
+    UtilityProperty,
+    Meter,
+    Reading,
+    Evidence,
+    BillingPeriod,
+    Alert,
+    Report
 }

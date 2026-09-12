@@ -39,9 +39,8 @@ public static class WebApplicationExtensions
         #region MinimalApi
 
         _ = app.MapVersionEndpoints();
-        _ = app.MapAuthorEndpoints();
-        _ = app.MapMovieEndpoints();
-        _ = app.MapReviewEndpoints();
+        _ = app.MapReadingEndpoints();
+        _ = app.MapEvidenceEndpoints();
 
         #endregion MinimalApi
 

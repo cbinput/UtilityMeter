@@ -1,6 +1,5 @@
 namespace CleanMinimalApi.Application.Tests.Unit.Common.Exceptions;
 
-using Application.Authors.Entities;
 using CleanMinimalApi.Application.Common.Enums;
 using CleanMinimalApi.Application.Common.Exceptions;
 using Shouldly;
@@ -12,8 +11,8 @@ public class NotFoundExceptionTests
     public void ThrowIfNull_ShouldNotThrow_NotFoundException()
     {
         // Arrange
-        var entityType = EntityType.Author;
-        var argument = new Author(Guid.NewGuid(), "FirstName", "LastName");
+        var entityType = EntityType.Reading;
+        var argument = new object();
 
         // Act
         var result = Should.NotThrow(() =>
@@ -31,8 +30,8 @@ public class NotFoundExceptionTests
     public void ThrowIfNull_ShouldThrow_NotFoundException()
     {
         // Arrange
-        var entityType = EntityType.Author;
-        Author? argument = null;
+        var entityType = EntityType.Reading;
+        object? argument = null;
 
         // Act
         var result = Should.Throw<NotFoundException>(() =>
@@ -45,14 +44,14 @@ public class NotFoundExceptionTests
         // Assert
         _ = result.ShouldNotBeNull();
 
-        result.Message.ShouldBe("The Author with the supplied id was not found.");
+        result.Message.ShouldBe("The Reading with the supplied id was not found.");
     }
 
     [Fact]
     public void Throw_ShouldThrow_NotFoundException()
     {
         // Arrange
-        var entityType = EntityType.Author;
+        var entityType = EntityType.Reading;
 
         // Act
         var result = Should.Throw<NotFoundException>(() =>
@@ -65,6 +64,6 @@ public class NotFoundExceptionTests
         // Assert
         _ = result.ShouldNotBeNull();
 
-        result.Message.ShouldBe("The Author with the supplied id was not found.");
+        result.Message.ShouldBe("The Reading with the supplied id was not found.");
     }
 }

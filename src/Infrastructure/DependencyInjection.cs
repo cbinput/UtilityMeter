@@ -1,12 +1,11 @@
 namespace CleanMinimalApi.Infrastructure;
 
 using System;
-using Application.Authors;
 using Application.BackgroundJobs;
-using Application.Movies;
-using Application.Reviews;
+using Application.Evidence;
+using Application.Readings;
 using Application.Storage;
-using Databases.MovieReviews;
+using Databases.UtilityMeter;
 using Infrastructure.BackgroundJobs;
 using Infrastructure.Storage;
 using Microsoft.EntityFrameworkCore;
@@ -16,17 +15,16 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services)
     {
-        _ = services.AddDbContext<MovieReviewsDbContext>(options =>
-            options.UseInMemoryDatabase($"Movies-{Guid.NewGuid()}"), ServiceLifetime.Singleton);
+        _ = services.AddDbContext<UtilityMeterDbContext>(options =>
+            options.UseInMemoryDatabase($"UtilityMeter-{Guid.NewGuid()}"), ServiceLifetime.Singleton);
 
-        _ = services.AddSingleton<EntityFrameworkMovieReviewsRepository>();
+        _ = services.AddSingleton<EntityFrameworkReadingsRepository>();
+        _ = services.AddSingleton<EntityFrameworkEvidenceRepository>();
 
-        _ = services.AddSingleton<IAuthorsRepository>(p =>
-            p.GetRequiredService<EntityFrameworkMovieReviewsRepository>());
-        _ = services.AddSingleton<IMoviesRepository>(x =>
-            x.GetRequiredService<EntityFrameworkMovieReviewsRepository>());
-        _ = services.AddSingleton<IReviewsRepository>(x =>
-            x.GetRequiredService<EntityFrameworkMovieReviewsRepository>());
+        _ = services.AddSingleton<IReadingsRepository>(x =>
+            x.GetRequiredService<EntityFrameworkReadingsRepository>());
+        _ = services.AddSingleton<IEvidenceRepository>(x =>
+            x.GetRequiredService<EntityFrameworkEvidenceRepository>());
 
         _ = services.AddSingleton<IBackgroundJobQueue, InMemoryBackgroundJobQueue>();
         _ = services.AddSingleton<IObjectStorage, InMemoryObjectStorage>();

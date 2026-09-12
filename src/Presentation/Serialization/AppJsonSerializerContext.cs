@@ -1,10 +1,13 @@
 namespace CleanMinimalApi.Presentation.Serialization;
 
 using System.Text.Json.Serialization;
-using Application.Authors.Entities;
-using Application.Movies.Entities;
-using Application.Reviews.Entities;
+using Application.Evidence.Commands.AttachEvidenceToReading;
+using Application.Evidence.Commands.UploadEvidence;
+using Application.Evidence.Dtos;
+using Application.Readings.Commands.CreateReading;
+using Application.Readings.Dtos;
 using Application.Versions.Entities;
+using Endpoints;
 using Requests;
 
 /// <summary>
@@ -17,18 +20,17 @@ using Requests;
     PropertyNameCaseInsensitive = true,
     WriteIndented = false,
     GenerationMode = JsonSourceGenerationMode.Default)]
-[JsonSerializable(typeof(Author))]
-[JsonSerializable(typeof(List<Author>))]
-[JsonSerializable(typeof(Movie))]
-[JsonSerializable(typeof(List<Movie>))]
-[JsonSerializable(typeof(Review))]
-[JsonSerializable(typeof(List<Review>))]
-[JsonSerializable(typeof(ReviewAuthor))]
-[JsonSerializable(typeof(ReviewedMovie))]
 [JsonSerializable(typeof(Version))]
 [JsonSerializable(typeof(List<Version>))]
-[JsonSerializable(typeof(CreateReviewRequest))]
-[JsonSerializable(typeof(UpdateReviewRequest))]
+[JsonSerializable(typeof(CreateReadingRequest))]
+[JsonSerializable(typeof(CreateReadingResponse))]
+[JsonSerializable(typeof(ReadingDto))]
+[JsonSerializable(typeof(List<ReadingDto>))]
+[JsonSerializable(typeof(UploadEvidenceResponse))]
+[JsonSerializable(typeof(AttachEvidenceRequest))]
+[JsonSerializable(typeof(AttachEvidenceToReadingResponse))]
+[JsonSerializable(typeof(EvidenceDto))]
+[JsonSerializable(typeof(List<EvidenceDto>))]
 public partial class AppJsonSerializerContext : JsonSerializerContext
 {
 }

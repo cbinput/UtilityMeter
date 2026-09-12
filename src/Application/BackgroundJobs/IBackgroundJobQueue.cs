@@ -4,9 +4,9 @@ namespace CleanMinimalApi.Application.BackgroundJobs;
 
 public interface IBackgroundJobQueue
 {
-    ValueTask QueueAsync(string jobType, Func<CancellationToken, Task> workItem, CancellationToken cancellationToken = default);
+    public ValueTask QueueAsync(string jobType, Func<CancellationToken, Task> workItem, CancellationToken cancellationToken = default);
 
-    IAsyncEnumerable<BackgroundJob> DequeueAsync(CancellationToken cancellationToken);
+    public IAsyncEnumerable<BackgroundJob> DequeueAsync(CancellationToken cancellationToken);
 }
 
 #pragma warning restore CA1711
