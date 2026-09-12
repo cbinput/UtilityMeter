@@ -1,22 +1,17 @@
 namespace CleanMinimalApi.Infrastructure.Databases.MovieReviews.Mapping;
 
-using AutoMapper;
-using Application = Application.Authors.Entities;
-using Infrastructure = Models;
+using ApplicationAuthors = Application.Authors.Entities;
+using InfrastructureAuthor = Models.Author;
 
-internal class AuthorMappingProfile : Profile
+internal static class AuthorMappingProfile
 {
-    public AuthorMappingProfile()
+    public static ApplicationAuthors.Author ToApplicationAuthor(InfrastructureAuthor? author)
     {
-        _ = this.CreateMap<Application.Author, Infrastructure.Author>()
-            .ForMember(d => d.DateCreated, o => o.Ignore())
-            .ForMember(d => d.DateModified, o => o.Ignore())
-            .ReverseMap();
+        if (author is null)
+        {
+            return null!;
+        }
 
-        _ = this.CreateMap<Application.ReviewAuthor, Infrastructure.Author>()
-            .ForMember(d => d.Reviews, o => o.Ignore())
-            .ForMember(d => d.DateCreated, o => o.Ignore())
-            .ForMember(d => d.DateModified, o => o.Ignore())
-            .ReverseMap();
+        return new ApplicationAuthors.Author(author.Id, author.FirstName, author.LastName);
     }
 }

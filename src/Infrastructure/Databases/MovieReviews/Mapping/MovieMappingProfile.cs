@@ -1,22 +1,17 @@
 namespace CleanMinimalApi.Infrastructure.Databases.MovieReviews.Mapping;
 
-using AutoMapper;
-using Application = Application.Movies.Entities;
-using Infrastructure = Models;
+using ApplicationMovies = Application.Movies.Entities;
+using InfrastructureMovie = Models.Movie;
 
-internal class MovieMappingProfile : Profile
+internal static class MovieMappingProfile
 {
-    public MovieMappingProfile()
+    public static ApplicationMovies.Movie ToApplicationMovie(InfrastructureMovie? movie)
     {
-        _ = this.CreateMap<Application.Movie, Infrastructure.Movie>()
-            .ForMember(d => d.DateCreated, o => o.Ignore())
-            .ForMember(d => d.DateModified, o => o.Ignore())
-            .ReverseMap();
+        if (movie is null)
+        {
+            return null!;
+        }
 
-        _ = this.CreateMap<Application.ReviewedMovie, Infrastructure.Movie>()
-            .ForMember(d => d.Reviews, o => o.Ignore())
-            .ForMember(d => d.DateCreated, o => o.Ignore())
-            .ForMember(d => d.DateModified, o => o.Ignore())
-            .ReverseMap();
+        return new ApplicationMovies.Movie(movie.Id, movie.Title);
     }
 }

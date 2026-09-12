@@ -11,7 +11,7 @@ using Entities = Application.Authors.Entities;
 
 public class AuthorEndpointTests : IDisposable
 {
-    private CleanMinimalApiApplication application;
+    private CleanMinimalApiApplication application = null!;
 
     public AuthorEndpointTests()
     {
@@ -65,7 +65,7 @@ public class AuthorEndpointTests : IDisposable
         using var client = this.application.CreateClient();
         using var authorResponse = await client.GetAsync("/api/author");
         var authorResult = (await authorResponse.Content.ReadAsStringAsync())
-            .Deserialize<List<Entities.Author>>()[0];
+            .Deserialize<List<Entities.Author>>()![0];
 
         // Act
         using var response = await client.GetAsync($"/api/author/{authorResult.Id}");
@@ -128,8 +128,8 @@ public class AuthorEndpointTests : IDisposable
     {
         if (disposing)
         {
-            this.application?.Dispose();
-            this.application = null;
+            this.application.Dispose();
+            this.application = null!;
         }
     }
 }

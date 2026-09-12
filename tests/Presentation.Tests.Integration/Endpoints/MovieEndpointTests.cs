@@ -11,7 +11,7 @@ using Entities = Application.Movies.Entities;
 
 public class MovieEndpointTests : IDisposable
 {
-    private CleanMinimalApiApplication application;
+    private CleanMinimalApiApplication application = null!;
 
     public MovieEndpointTests()
     {
@@ -66,7 +66,7 @@ public class MovieEndpointTests : IDisposable
         using var client = this.application.CreateClient();
         using var movieResponse = await client.GetAsync("/api/movie");
         var movieResult = (await movieResponse.Content.ReadAsStringAsync())
-            .Deserialize<List<Entities.Movie>>()[0];
+            .Deserialize<List<Entities.Movie>>()![0];
 
         // Act
         using var response = await client.GetAsync($"/api/movie/{movieResult.Id}");
@@ -130,8 +130,8 @@ public class MovieEndpointTests : IDisposable
     {
         if (disposing)
         {
-            this.application?.Dispose();
-            this.application = null;
+            this.application.Dispose();
+            this.application = null!;
         }
     }
 }

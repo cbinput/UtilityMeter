@@ -9,7 +9,7 @@ using Entities = Application.Versions.Entities;
 
 public class VersionEndpointTests : IDisposable
 {
-    private CleanMinimalApiApplication application;
+    private CleanMinimalApiApplication application = null!;
 
     public VersionEndpointTests()
     {
@@ -48,8 +48,8 @@ public class VersionEndpointTests : IDisposable
     {
         if (disposing)
         {
-            this.application?.Dispose();
-            this.application = null;
+            this.application.Dispose();
+            this.application = null!;
         }
     }
 }

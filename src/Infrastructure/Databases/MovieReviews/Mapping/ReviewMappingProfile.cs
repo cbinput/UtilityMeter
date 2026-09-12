@@ -1,20 +1,23 @@
 namespace CleanMinimalApi.Infrastructure.Databases.MovieReviews.Mapping;
 
-using AutoMapper;
-using Application = Application.Reviews.Entities;
-using Infrastructure = Models;
+using ApplicationAuthor = Application.Authors.Entities.ReviewAuthor;
+using ApplicationMovie = Application.Movies.Entities.ReviewedMovie;
+using ApplicationReviews = Application.Reviews.Entities;
+using InfrastructureReview = Models.Review;
 
-internal class ReviewMappingProfile : Profile
+internal static class ReviewMappingProfile
 {
-    public ReviewMappingProfile()
+    public static ApplicationReviews.Review ToApplicationReview(InfrastructureReview? review)
     {
-        _ = this.CreateMap<Application.Review, Infrastructure.Review>()
-            .ForMember(d => d.ReviewAuthorId, o => o.Ignore())
-            .ForMember(d => d.ReviewAuthor, o => o.MapFrom(s => s.ReviewAuthor))
-            .ForMember(d => d.ReviewedMovieId, o => o.Ignore())
-            .ForMember(d => d.ReviewedMovie, o => o.MapFrom(s => s.ReviewedMovie))
-            .ForMember(d => d.DateCreated, o => o.Ignore())
-            .ForMember(d => d.DateModified, o => o.Ignore())
-            .ReverseMap();
+        if (review is null)
+        {
+            return null!;
+        }
+
+        return new ApplicationReviews.Review(
+            review.Id,
+            review.Stars,
+            review.ReviewedMovie is null ? null! : new ApplicationMovie(review.ReviewedMovie.Id, review.ReviewedMovie.Title),
+            review.ReviewAuthor is null ? null! : new ApplicationAuthor(review.ReviewAuthor.Id, review.ReviewAuthor.FirstName, review.ReviewAuthor.LastName));
     }
 }

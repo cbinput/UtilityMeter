@@ -17,13 +17,13 @@ public static class JsonSerializerExtensions
         }
     };
 
-    public static string Serialize(this object input)
+    public static string Serialize(this object? input)
     {
         return JsonSerializer.Serialize(input, Options);
     }
 
-    public static T Deserialize<T>(this string input)
+    public static T Deserialize<T>(this string input) where T : notnull
     {
-        return JsonSerializer.Deserialize<T>(input, Options);
+        return JsonSerializer.Deserialize<T>(input, Options)!;
     }
 }

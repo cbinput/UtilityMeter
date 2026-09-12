@@ -1,10 +1,8 @@
 namespace CleanMinimalApi.Infrastructure.Tests.Integration.Databases.MovieReviews;
 
 using System;
-using AutoMapper;
 using Extensions;
 using Infrastructure.Databases.MovieReviews;
-using Infrastructure.Databases.MovieReviews.Mapping;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Time.Testing;
 using Xunit;
@@ -19,10 +17,9 @@ public class MovieReviewsCollectionFixture : ICollectionFixture<MovieReviewsData
 
 public class MovieReviewsDataFixture : IDisposable
 {
-    internal MovieReviewsDbContext Context { get; set; }
-    internal FakeTimeProvider TimeProvider { get; set; }
-    internal IMapper Mapper { get; set; }
-    internal EntityFrameworkMovieReviewsRepository Repository { get; set; }
+    internal MovieReviewsDbContext Context { get; set; } = null!;
+    internal FakeTimeProvider TimeProvider { get; set; } = null!;
+    internal EntityFrameworkMovieReviewsRepository Repository { get; set; } = null!;
 
     public MovieReviewsDataFixture()
     {
@@ -35,17 +32,7 @@ public class MovieReviewsDataFixture : IDisposable
         this.TimeProvider = new FakeTimeProvider();
         this.TimeProvider.SetUtcNow(new DateTime(2009, 12, 31, 23, 51, 01));
 
-        this.Mapper = new MapperConfiguration(cfg =>
-            cfg
-                .AddProfiles(
-                [
-                    new AuthorMappingProfile(),
-                    new MovieMappingProfile(),
-                    new ReviewMappingProfile()
-                ]))
-                .CreateMapper();
-
-        this.Repository = new EntityFrameworkMovieReviewsRepository(this.Context, this.TimeProvider, this.Mapper);
+        this.Repository = new EntityFrameworkMovieReviewsRepository(this.Context, this.TimeProvider);
 
         _ = this.Context.Database.EnsureDeleted();
         _ = this.Context.Database.EnsureCreated();
@@ -62,8 +49,8 @@ public class MovieReviewsDataFixture : IDisposable
     {
         if (disposing)
         {
-            this.Context?.Dispose();
-            this.Context = null;
+            this.Context.Dispose();
+            this.Context = null!;
         }
     }
 }

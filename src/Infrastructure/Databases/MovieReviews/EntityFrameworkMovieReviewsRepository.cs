@@ -6,32 +6,32 @@ using Application.Common.Enums;
 using Application.Common.Exceptions;
 using Application.Movies;
 using Application.Reviews;
-using AutoMapper;
 using Extensions;
 using Microsoft.EntityFrameworkCore;
 using Models;
 using ApplicationAuthor = Application.Authors.Entities.Author;
 using ApplicationMovie = Application.Movies.Entities.Movie;
 using ApplicationReview = Application.Reviews.Entities.Review;
+using ApplicationReviewAuthor = Application.Authors.Entities.ReviewAuthor;
+using ApplicationReviewedMovie = Application.Movies.Entities.ReviewedMovie;
+using InfrastructureAuthor = Models.Author;
+using InfrastructureMovie = Models.Movie;
+using InfrastructureReview = Models.Review;
 
 internal class EntityFrameworkMovieReviewsRepository : IAuthorsRepository, IMoviesRepository, IReviewsRepository
 {
     private readonly MovieReviewsDbContext context;
     private readonly TimeProvider timeProvider;
-    private readonly IMapper mapper;
 
     public EntityFrameworkMovieReviewsRepository(
         MovieReviewsDbContext context,
-        TimeProvider timeProvider,
-        IMapper mapper)
+        TimeProvider timeProvider)
     {
         ArgumentNullException.ThrowIfNull(context);
         ArgumentNullException.ThrowIfNull(timeProvider);
-        ArgumentNullException.ThrowIfNull(mapper);
 
         this.context = context;
         this.timeProvider = timeProvider;
-        this.mapper = mapper;
 
         _ = this.context.Database.EnsureDeleted();
         _ = this.context.Database.EnsureCreated();
@@ -48,19 +48,19 @@ internal class EntityFrameworkMovieReviewsRepository : IAuthorsRepository, IMovi
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
-        return this.mapper.Map<List<ApplicationAuthor>>(authors);
+        return authors.Select(MapAuthor).ToList();
     }
 
     public virtual async Task<ApplicationAuthor> GetAuthorById(Guid id, CancellationToken cancellationToken)
     {
         var author = await this.context.Authors
-            .Where(r => r.Id == id).Include(a => a.Reviews)
+            .Where(r => r.Id == id)
+            .Include(a => a.Reviews)
             .ThenInclude(r => r.ReviewedMovie)
             .AsNoTracking()
             .FirstOrDefaultAsync(cancellationToken);
 
-        return this.mapper.Map<ApplicationAuthor>(author);
-        ;
+        return author is null ? null! : MapAuthor(author);
     }
 
     public virtual async Task<bool> AuthorExists(Guid id, CancellationToken cancellationToken)
@@ -80,7 +80,7 @@ internal class EntityFrameworkMovieReviewsRepository : IAuthorsRepository, IMovi
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
-        return this.mapper.Map<List<ApplicationMovie>>(result);
+        return result.Select(MapMovie).ToList();
     }
 
     public virtual async Task<ApplicationMovie> GetMovieById(Guid id, CancellationToken cancellationToken)
@@ -92,7 +92,7 @@ internal class EntityFrameworkMovieReviewsRepository : IAuthorsRepository, IMovi
             .AsNoTracking()
             .FirstOrDefaultAsync(cancellationToken);
 
-        return this.mapper.Map<ApplicationMovie>(result);
+        return result is null ? null! : MapMovie(result);
     }
 
     public virtual async Task<bool> MovieExists(Guid id, CancellationToken cancellationToken)
@@ -110,7 +110,7 @@ internal class EntityFrameworkMovieReviewsRepository : IAuthorsRepository, IMovi
         int stars,
         CancellationToken cancellationToken)
     {
-        var review = new Review
+        var review = new InfrastructureReview
         {
             ReviewAuthorId = authorId,
             ReviewedMovieId = movieId,
@@ -130,7 +130,7 @@ internal class EntityFrameworkMovieReviewsRepository : IAuthorsRepository, IMovi
             .AsNoTracking()
             .FirstAsync(cancellationToken);
 
-        return this.mapper.Map<ApplicationReview>(result);
+        return MapReview(result);
     }
 
     public async Task<bool> DeleteReview(Guid id, CancellationToken cancellationToken)
@@ -156,7 +156,7 @@ internal class EntityFrameworkMovieReviewsRepository : IAuthorsRepository, IMovi
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
-        return this.mapper.Map<List<ApplicationReview>>(result);
+        return result.Select(MapReview).ToList();
     }
 
     public async Task<ApplicationReview> GetReviewById(Guid id, CancellationToken cancellationToken)
@@ -168,7 +168,7 @@ internal class EntityFrameworkMovieReviewsRepository : IAuthorsRepository, IMovi
             .AsNoTracking()
             .FirstOrDefaultAsync(cancellationToken);
 
-        return this.mapper.Map<ApplicationReview>(result);
+        return result is null ? null! : MapReview(result);
     }
 
     public async Task<bool> ReviewExists(Guid id, CancellationToken cancellationToken)
@@ -187,7 +187,10 @@ internal class EntityFrameworkMovieReviewsRepository : IAuthorsRepository, IMovi
         {
             var review = this.context.Reviews.FirstOrDefault(r => r.Id == id);
 
-            NotFoundException.ThrowIfNull(review, EntityType.Review);
+            if (review is null)
+            {
+                return false;
+            }
 
             review.Stars = stars;
             review.ReviewAuthorId = authorId;
@@ -206,4 +209,65 @@ internal class EntityFrameworkMovieReviewsRepository : IAuthorsRepository, IMovi
     }
 
     #endregion Reviews
+
+    private static ApplicationAuthor MapAuthor(InfrastructureAuthor? author)
+    {
+        if (author is null)
+        {
+            return null!;
+        }
+
+        return new ApplicationAuthor(
+            author.Id,
+            author.FirstName,
+            author.LastName,
+            author.Reviews?.Select(MapReview).ToList() ?? []);
+    }
+
+    private static ApplicationMovie MapMovie(InfrastructureMovie? movie)
+    {
+        if (movie is null)
+        {
+            return null!;
+        }
+
+        return new ApplicationMovie(
+            movie.Id,
+            movie.Title,
+            movie.Reviews?.Select(MapReview).ToList() ?? []);
+    }
+
+    private static ApplicationReview MapReview(InfrastructureReview? review)
+    {
+        if (review is null)
+        {
+            return null!;
+        }
+
+        return new ApplicationReview(
+            review.Id,
+            review.Stars,
+            MapReviewedMovie(review.ReviewedMovie),
+            MapReviewAuthor(review.ReviewAuthor));
+    }
+
+    private static ApplicationReviewedMovie MapReviewedMovie(InfrastructureMovie? movie)
+    {
+        if (movie is null)
+        {
+            return null!;
+        }
+
+        return new ApplicationReviewedMovie(movie.Id, movie.Title);
+    }
+
+    private static ApplicationReviewAuthor MapReviewAuthor(InfrastructureAuthor? author)
+    {
+        if (author is null)
+        {
+            return null!;
+        }
+
+        return new ApplicationReviewAuthor(author.Id, author.FirstName, author.LastName);
+    }
 }

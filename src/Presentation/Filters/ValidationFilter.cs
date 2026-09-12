@@ -19,7 +19,7 @@ public static class ValidationFilter
         return invocationContext => next(invocationContext);
     }
 
-    private static async ValueTask<object> Validate(IEnumerable<ValidationDescriptor> validationDescriptors, EndpointFilterInvocationContext invocationContext, EndpointFilterDelegate next)
+    private static async ValueTask<object?> Validate(IEnumerable<ValidationDescriptor> validationDescriptors, EndpointFilterInvocationContext invocationContext, EndpointFilterDelegate next)
     {
         foreach (var descriptor in validationDescriptors)
         {

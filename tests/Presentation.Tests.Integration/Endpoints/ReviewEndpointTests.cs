@@ -15,7 +15,7 @@ using Entities = Application.Reviews.Entities;
 
 public class ReviewEndpointTests : IDisposable
 {
-    private CleanMinimalApiApplication application;
+    private CleanMinimalApiApplication application = null!;
 
     public ReviewEndpointTests()
     {
@@ -29,9 +29,9 @@ public class ReviewEndpointTests : IDisposable
         using var client = this.application.CreateClient();
 
         using var authorResponse = await client.GetAsync("/api/author");
-        var authorResult = (await authorResponse.Content.ReadAsStringAsync()).Deserialize<List<Author>>()[0];
+        var authorResult = (await authorResponse.Content.ReadAsStringAsync()).Deserialize<List<Author>>()![0];
         using var movieResponse = await client.GetAsync("/api/movie");
-        var movieResult = (await movieResponse.Content.ReadAsStringAsync()).Deserialize<List<Movie>>()[0];
+        var movieResult = (await movieResponse.Content.ReadAsStringAsync()).Deserialize<List<Movie>>()![0];
         var json = (new { Stars = 5, AuthorId = authorResult.Id, MovieId = movieResult.Id }).Serialize();
         var content = new StringContent(json, Encoding.UTF8, "application/json");
 
@@ -65,7 +65,7 @@ public class ReviewEndpointTests : IDisposable
         using var client = this.application.CreateClient();
         using var reviewResponse = await client.GetAsync("/api/review");
         var reviewResult = (await reviewResponse.Content.ReadAsStringAsync())
-            .Deserialize<List<Entities.Review>>()[0];
+            .Deserialize<List<Entities.Review>>()![0];
 
         // Act
         using var response = await client.DeleteAsync($"/api/review/{reviewResult.Id}");
@@ -80,7 +80,7 @@ public class ReviewEndpointTests : IDisposable
     public async Task GetReviews_ShouldReturn_Ok()
     {
         // Arrange
-        using var client = this.application.CreateClient();
+        using var client = this.application!.CreateClient();
 
         // Act
         using var response = await client.GetAsync("/api/review");
@@ -184,15 +184,15 @@ public class ReviewEndpointTests : IDisposable
 
         using var authorResponse = await client.GetAsync("/api/author");
         var authorResult = (await authorResponse.Content.ReadAsStringAsync())
-            .Deserialize<List<Author>>()[0];
+            .Deserialize<List<Author>>()![0];
 
         using var movieResponse = await client.GetAsync("/api/movie");
         var movieResult = (await movieResponse.Content.ReadAsStringAsync())
-            .Deserialize<List<Movie>>()[0];
+            .Deserialize<List<Movie>>()![0];
 
         using var reviewResponse = await client.GetAsync("/api/review");
         var reviewResult = (await reviewResponse.Content.ReadAsStringAsync())
-            .Deserialize<List<Entities.Review>>()[0];
+            .Deserialize<List<Entities.Review>>()![0];
 
         var json = (new { Stars = 5, AuthorId = authorResult.Id, MovieId = movieResult.Id }).Serialize();
         var content = new StringContent(json, Encoding.UTF8, "application/json");
@@ -231,8 +231,8 @@ public class ReviewEndpointTests : IDisposable
     {
         if (disposing)
         {
-            this.application?.Dispose();
-            this.application = null;
+            this.application.Dispose();
+            this.application = null!;
         }
     }
 }

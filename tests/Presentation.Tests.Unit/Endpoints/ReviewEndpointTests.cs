@@ -51,17 +51,19 @@ public class ReviewEndpointTests
         _ = value[0].Stars.ShouldBeOfType<int>();
         value[0].Stars.ShouldBe(5);
 
-        _ = value[0].ReviewAuthor.Id.ShouldBeOfType<Guid>();
-        value[0].ReviewAuthor.Id.ShouldBe(Guid.Empty);
-        _ = value[0].ReviewAuthor.FirstName.ShouldBeOfType<string>();
-        value[0].ReviewAuthor.FirstName.ShouldBe("Lorem");
-        _ = value[0].ReviewAuthor.LastName.ShouldBeOfType<string>();
-        value[0].ReviewAuthor.LastName.ShouldBe("Ipsum");
+        var firstReview = value[0];
 
-        _ = value[0].ReviewedMovie.Id.ShouldBeOfType<Guid>();
-        value[0].ReviewedMovie.Id.ShouldBe(Guid.Empty);
-        _ = value[0].ReviewedMovie.Title.ShouldBeOfType<string>();
-        value[0].ReviewedMovie.Title.ShouldBe("Lorem Ipsum");
+        _ = firstReview.ReviewAuthor!.Id.ShouldBeOfType<Guid>();
+        firstReview.ReviewAuthor!.Id.ShouldBe(Guid.Empty);
+        _ = firstReview.ReviewAuthor!.FirstName.ShouldBeOfType<string>();
+        firstReview.ReviewAuthor!.FirstName.ShouldBe("Lorem");
+        _ = firstReview.ReviewAuthor!.LastName.ShouldBeOfType<string>();
+        firstReview.ReviewAuthor!.LastName.ShouldBe("Ipsum");
+
+        _ = firstReview.ReviewedMovie!.Id.ShouldBeOfType<Guid>();
+        firstReview.ReviewedMovie!.Id.ShouldBe(Guid.Empty);
+        _ = firstReview.ReviewedMovie!.Title.ShouldBeOfType<string>();
+        firstReview.ReviewedMovie!.Title.ShouldBe("Lorem Ipsum");
     }
 
     [Fact]
@@ -118,17 +120,17 @@ public class ReviewEndpointTests
         _ = value.Stars.ShouldBeOfType<int>();
         value.Stars.ShouldBe(5);
 
-        _ = value.ReviewAuthor.Id.ShouldBeOfType<Guid>();
-        value.ReviewAuthor.Id.ShouldBe(Guid.Empty);
-        _ = value.ReviewAuthor.FirstName.ShouldBeOfType<string>();
-        value.ReviewAuthor.FirstName.ShouldBe("Lorem");
-        _ = value.ReviewAuthor.LastName.ShouldBeOfType<string>();
-        value.ReviewAuthor.LastName.ShouldBe("Ipsum");
+        _ = value.ReviewAuthor!.Id.ShouldBeOfType<Guid>();
+        value.ReviewAuthor!.Id.ShouldBe(Guid.Empty);
+        _ = value.ReviewAuthor!.FirstName.ShouldBeOfType<string>();
+        value.ReviewAuthor!.FirstName.ShouldBe("Lorem");
+        _ = value.ReviewAuthor!.LastName.ShouldBeOfType<string>();
+        value.ReviewAuthor!.LastName.ShouldBe("Ipsum");
 
-        _ = value.ReviewedMovie.Id.ShouldBeOfType<Guid>();
-        value.ReviewedMovie.Id.ShouldBe(Guid.Empty);
-        _ = value.ReviewedMovie.Title.ShouldBeOfType<string>();
-        value.ReviewedMovie.Title.ShouldBe("Lorem Ipsum");
+        _ = value.ReviewedMovie!.Id.ShouldBeOfType<Guid>();
+        value.ReviewedMovie!.Id.ShouldBe(Guid.Empty);
+        _ = value.ReviewedMovie!.Title.ShouldBeOfType<string>();
+        value.ReviewedMovie!.Title.ShouldBe("Lorem Ipsum");
     }
 
     [Fact]
@@ -212,17 +214,17 @@ public class ReviewEndpointTests
         _ = value.Stars.ShouldBeOfType<int>();
         value.Stars.ShouldBe(5);
 
-        _ = value.ReviewAuthor.Id.ShouldBeOfType<Guid>();
-        value.ReviewAuthor.Id.ShouldBe(Guid.Empty);
-        _ = value.ReviewAuthor.FirstName.ShouldBeOfType<string>();
-        value.ReviewAuthor.FirstName.ShouldBe("Lorem");
-        _ = value.ReviewAuthor.LastName.ShouldBeOfType<string>();
-        value.ReviewAuthor.LastName.ShouldBe("Ipsum");
+        _ = value.ReviewAuthor!.Id.ShouldBeOfType<Guid>();
+        value.ReviewAuthor!.Id.ShouldBe(Guid.Empty);
+        _ = value.ReviewAuthor!.FirstName.ShouldBeOfType<string>();
+        value.ReviewAuthor!.FirstName.ShouldBe("Lorem");
+        _ = value.ReviewAuthor!.LastName.ShouldBeOfType<string>();
+        value.ReviewAuthor!.LastName.ShouldBe("Ipsum");
 
-        _ = value.ReviewedMovie.Id.ShouldBeOfType<Guid>();
-        value.ReviewedMovie.Id.ShouldBe(Guid.Empty);
-        _ = value.ReviewedMovie.Title.ShouldBeOfType<string>();
-        value.ReviewedMovie.Title.ShouldBe("Lorem Ipsum");
+        _ = value.ReviewedMovie!.Id.ShouldBeOfType<Guid>();
+        value.ReviewedMovie!.Id.ShouldBe(Guid.Empty);
+        _ = value.ReviewedMovie!.Title.ShouldBeOfType<string>();
+        value.ReviewedMovie!.Title.ShouldBe("Lorem Ipsum");
     }
 
     [Fact]
