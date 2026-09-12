@@ -1,16 +1,18 @@
 namespace CleanMinimalApi.Application.Evidence.Commands.UploadEvidence;
 
 using System.Security.Cryptography;
+using CleanMinimalApi.Application.BackgroundJobs.Commands;
 using CleanMinimalApi.Application.Evidence.Entities;
 using CleanMinimalApi.Application.Storage;
 using MediatR;
 using Serilog;
 
-public sealed class UploadEvidenceHandler(IEvidenceRepository evidenceRepository, IObjectStorage objectStorage, ILogger logger)
+public sealed class UploadEvidenceHandler(IEvidenceRepository evidenceRepository, IObjectStorage objectStorage, ISender sender, ILogger logger)
     : IRequestHandler<UploadEvidenceCommand, UploadEvidenceResponse>
 {
     private readonly IEvidenceRepository evidenceRepository = evidenceRepository ?? throw new ArgumentNullException(nameof(evidenceRepository));
     private readonly IObjectStorage objectStorage = objectStorage ?? throw new ArgumentNullException(nameof(objectStorage));
+    private readonly ISender sender = sender ?? throw new ArgumentNullException(nameof(sender));
     private readonly ILogger logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
     public async Task<UploadEvidenceResponse> Handle(UploadEvidenceCommand request, CancellationToken cancellationToken)
@@ -48,6 +50,8 @@ public sealed class UploadEvidenceHandler(IEvidenceRepository evidenceRepository
         };
 
         await this.evidenceRepository.AddAsync(evidence, cancellationToken);
+
+        await this.sender.Send(new EnqueueOcrExtractionJobCommand(evidence.Id), cancellationToken);
 
         this.logger.Information("Evidence record created with id {EvidenceId}", evidence.Id);
 

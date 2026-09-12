@@ -50,11 +50,12 @@ Breaking the Clean Architecture pattern is the fact that the Infrastructure proj
 
 ### Project Structure
 
-It's streamlined into 3 functional projects.  All serve their own purpose and segregate aspects of the application to allow easier replacement and updating.
+It's streamlined into 4 functional projects.  All serve their own purpose and segregate aspects of the application to allow easier replacement and updating.
 
 1. **Presentation** - Setting up the interactions between the Application layer and the consumer.  In the project that's via a Minimal API but it could be many other things.  The Minimal API uses endpoints to funnel the actions to the layer that owns the domain.
 1. **Application** - This project owns the domain and business logic.  There's validation of the Commands and Queries and handling of domain entities in their own separated structures.  Each domain type has it's own interface to a datasource downstream, this project doesn't care what fulfills this contract, as long as someone does.
 1. **Infrastructure** - Here's where the database comes into play.  Infra owns the data objects and works with the repository interfaces to fetch, create, update and remove object from the source.  There's some entity mapping here to allow specific models with attributes to remain in this layer and not bleed through to the **Application** layer.
+1. **Worker** - Background host that dequeues asynchronous jobs (OCR/extraction, anomaly analysis, report generation, export) and executes the related Application commands.
 
 ## Features
 

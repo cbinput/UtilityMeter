@@ -47,11 +47,21 @@ COPY --from=test /sln/tests/results/*.xml .
 FROM build AS publish
 ARG VERSION_PREFIX
 ARG VERSION_SUFFIX
-RUN dotnet publish ./src/**/Presentation.csproj --no-restore -c Release -v quiet -o app -p:VersionPrefix=${VERSION_PREFIX} -p:VersionSuffix=${VERSION_SUFFIX}
+RUN dotnet publish ./src/**/Presentation.csproj --no-restore -c Release -v quiet -o app/presentation -p:VersionPrefix=${VERSION_PREFIX} -p:VersionSuffix=${VERSION_SUFFIX}
+RUN dotnet publish ./src/**/Worker.csproj --no-restore -c Release -v quiet -o app/worker -p:VersionPrefix=${VERSION_PREFIX} -p:VersionSuffix=${VERSION_SUFFIX}
 
-# Runtime Image
-FROM ${BASE_IMAGE_REPO}/${BASE_IMAGE_RUNTIME}:${BASE_IMAGE_RUNTIME_TAG} AS run
+# Runtime API Image
+FROM ${BASE_IMAGE_REPO}/${BASE_IMAGE_RUNTIME}:${BASE_IMAGE_RUNTIME_TAG} AS run-api
 WORKDIR /
 EXPOSE 80
-COPY --from=publish /sln/app .
+COPY --from=publish /sln/app/presentation .
 ENTRYPOINT ["dotnet", "Presentation.dll"]
+
+# Runtime Worker Image
+FROM ${BASE_IMAGE_REPO}/${BASE_IMAGE_RUNTIME}:${BASE_IMAGE_RUNTIME_TAG} AS run-worker
+WORKDIR /
+COPY --from=publish /sln/app/worker .
+ENTRYPOINT ["dotnet", "Worker.dll"]
+
+# Backwards-compatible default runtime target
+FROM run-api AS run
