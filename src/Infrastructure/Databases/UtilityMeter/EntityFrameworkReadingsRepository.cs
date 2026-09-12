@@ -50,6 +50,25 @@ internal class EntityFrameworkReadingsRepository(UtilityMeterDbContext context) 
             .FirstOrDefaultAsync(cancellationToken);
     }
 
+    public async Task<Reading?> GetPreviousByMeterAsync(
+        Guid meterId,
+        DateTimeOffset measuredAt,
+        Guid? billingPeriodId,
+        CancellationToken cancellationToken = default)
+    {
+        var query = this.context.Readings
+            .Where(reading => reading.MeterId == meterId && reading.MeasuredAt < measuredAt);
+
+        if (billingPeriodId.HasValue)
+        {
+            query = query.Where(reading => reading.BillingPeriodId != billingPeriodId);
+        }
+
+        return await query
+            .OrderByDescending(reading => reading.MeasuredAt)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
     public async Task AddAsync(Reading reading, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(reading);

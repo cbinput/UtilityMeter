@@ -27,8 +27,11 @@ public sealed class CreateReadingHandler(IReadingsRepository readingsRepository,
         }
         else
         {
-            // Get the latest reading for this meter
-            previousReading = await this.readingsRepository.GetLatestByMeterIdAsync(request.MeterId, cancellationToken);
+            previousReading = await this.readingsRepository.GetPreviousByMeterAsync(
+                request.MeterId,
+                request.MeasuredAt,
+                request.BillingPeriodId,
+                cancellationToken);
         }
 
         var reading = new Reading
@@ -48,9 +51,14 @@ public sealed class CreateReadingHandler(IReadingsRepository readingsRepository,
         if (previousReading != null)
         {
             var historicalReadings = await this.readingsRepository.GetByMeterIdAsync(request.MeterId, cancellationToken);
+            var historicalReadingsById = historicalReadings.ToDictionary(item => item.Id);
             var historicalConsumptions = historicalReadings
                 .Where(item => item.PreviousReadingId.HasValue)
-                .Select(item => item.Value - (historicalReadings.FirstOrDefault(previous => previous.Id == item.PreviousReadingId)?.Value ?? item.Value))
+                .Select(item => item.PreviousReadingId.HasValue && historicalReadingsById.TryGetValue(item.PreviousReadingId.Value, out var previous)
+                    ? item.Value - previous.Value
+                    : (decimal?)null)
+                .Where(consumption => consumption.HasValue)
+                .Select(consumption => consumption!.Value)
                 .Where(consumption => consumption > 0m)
                 .ToList();
             var historicalAverage = historicalConsumptions.Count == 0 ? 0m : historicalConsumptions.Average();

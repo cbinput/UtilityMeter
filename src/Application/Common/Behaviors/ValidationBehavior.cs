@@ -1,0 +1,40 @@
+namespace CleanMinimalApi.Application.Common.Behaviors;
+
+using FluentValidation;
+using MediatR;
+
+#pragma warning disable CA2016
+
+internal sealed class ValidationBehavior<TRequest, TResponse>(IEnumerable<IValidator<TRequest>> validators)
+    : IPipelineBehavior<TRequest, TResponse>
+    where TRequest : notnull
+{
+    private readonly IValidator<TRequest>[] validators = validators.ToArray();
+
+    public async Task<TResponse> Handle(
+        TRequest request,
+        RequestHandlerDelegate<TResponse> next,
+        CancellationToken cancellationToken)
+    {
+        if (this.validators.Length == 0)
+        {
+            return await next();
+        }
+
+        var context = new ValidationContext<TRequest>(request);
+        var results = await Task.WhenAll(this.validators.Select(validator => validator.ValidateAsync(context, cancellationToken)));
+        var failures = results
+            .SelectMany(result => result.Errors)
+            .Where(failure => failure is not null)
+            .ToList();
+
+        if (failures.Count != 0)
+        {
+            throw new ValidationException(failures);
+        }
+
+        return await next();
+    }
+}
+
+#pragma warning restore CA2016

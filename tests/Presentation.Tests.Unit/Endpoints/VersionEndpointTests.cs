@@ -30,7 +30,7 @@ public class VersionEndpointTests
         var response = await VersionEndpoints.GetVersion(sender);
 
         // Assert
-        var result = response.Result.ShouldBeOfType<Ok<Entities.Version>>();
+        var result = response.ShouldBeOfType<Ok<Entities.Version>>();
 
         result.StatusCode.ShouldBe(StatusCodes.Status200OK);
 
@@ -53,16 +53,6 @@ public class VersionEndpointTests
             .Throws(new ArgumentException("Expected Exception"));
 
         // Act
-        var response = await VersionEndpoints.GetVersion(sender);
-
-        // Assert
-        var result = response.Result.ShouldBeOfType<ProblemHttpResult>();
-
-        result.StatusCode.ShouldBe(StatusCodes.Status500InternalServerError);
-
-        result.ProblemDetails.Title.ShouldBe("An error occurred while processing your request.");
-        result.ProblemDetails.Instance.ShouldBe("Expected Exception");
-        result.ProblemDetails.Status.ShouldBe(StatusCodes.Status500InternalServerError);
-        result.ProblemDetails.Detail.ShouldNotBeNullOrEmpty();
+        await Should.ThrowAsync<ArgumentException>(() => VersionEndpoints.GetVersion(sender));
     }
 }

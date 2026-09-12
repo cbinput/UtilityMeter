@@ -25,14 +25,14 @@ public static class ReadingEndpoints
             .WithTags("readings")
             .WithDescription("Create and retrieve utility meter readings");
 
-        _ = root.MapPost("/", CreateReading)
+        root.MapPost("/", CreateReading)
             .Produces<CreateReadingResponse>(StatusCodes.Status201Created)
             .ProducesValidationProblem()
             .ProducesProblem(StatusCodes.Status500InternalServerError)
             .WithSummary("Create a new meter reading")
             .WithDescription("\n    POST /readings");
 
-        _ = root.MapGet("/{id}", GetReadingById)
+        root.MapGet("/{id}", GetReadingById)
             .Produces<ReadingDto>()
             .ProducesValidationProblem()
             .ProducesProblem(StatusCodes.Status404NotFound)
@@ -40,19 +40,19 @@ public static class ReadingEndpoints
             .WithSummary("Get a reading by its Id")
             .WithDescription("\n    GET /readings/00000000-0000-0000-0000-000000000000");
 
-        _ = root.MapGet("/meter/{meterId}", GetReadingsByMeter)
+        root.MapGet("/meter/{meterId}", GetReadingsByMeter)
             .Produces<List<ReadingDto>>()
             .ProducesProblem(StatusCodes.Status500InternalServerError)
             .WithSummary("Get all readings for a meter")
             .WithDescription("\n    GET /readings/meter/00000000-0000-0000-0000-000000000000");
 
-        _ = root.MapGet("/property/{propertyId}", GetReadingsByProperty)
+        root.MapGet("/property/{propertyId}", GetReadingsByProperty)
             .Produces<List<ReadingDto>>()
             .ProducesProblem(StatusCodes.Status500InternalServerError)
             .WithSummary("Get all readings for a property")
             .WithDescription("\n    GET /readings/property/00000000-0000-0000-0000-000000000000");
 
-        _ = root.MapGet("/billing-period/{billingPeriodId}", GetReadingsByBillingPeriod)
+        root.MapGet("/billing-period/{billingPeriodId}", GetReadingsByBillingPeriod)
             .Produces<List<ReadingDto>>()
             .ProducesProblem(StatusCodes.Status500InternalServerError)
             .WithSummary("Get all readings for a billing period")
@@ -61,96 +61,57 @@ public static class ReadingEndpoints
         return app;
     }
 
-    public static async Task<Results<Created<CreateReadingResponse>, ValidationProblem, ProblemHttpResult>> CreateReading(
+    public static async Task<Created<CreateReadingResponse>> CreateReading(
         [Validate][FromBody] CreateReadingRequest request,
         [FromServices] ISender sender)
     {
-        try
-        {
-            var command = new CreateReadingCommand(
-                request.MeterId,
-                request.PropertyId,
-                request.BillingPeriodId,
-                request.PreviousReadingId,
-                request.Value,
-                request.Unit,
-                request.MeasuredAt,
-                request.Source);
+        var command = new CreateReadingCommand(
+            request.MeterId,
+            request.PropertyId,
+            request.BillingPeriodId,
+            request.PreviousReadingId,
+            request.Value,
+            request.Unit,
+            request.MeasuredAt,
+            request.Source);
 
-            var result = await sender.Send(command);
-            return TypedResults.Created($"/api/readings/{result.Id}", result);
-        }
-        catch (Exception ex)
-        {
-            return TypedResults.Problem(ex.StackTrace, ex.Message, StatusCodes.Status500InternalServerError);
-        }
+        var result = await sender.Send(command);
+        return TypedResults.Created($"/api/readings/{result.Id}", result);
     }
 
-    public static async Task<Results<Ok<ReadingDto>, NotFound<string>, ProblemHttpResult>> GetReadingById(
+    public static async Task<Ok<ReadingDto>> GetReadingById(
         [Validate][FromRoute] Guid id,
         [FromServices] ISender sender)
     {
-        try
-        {
-            var query = new GetReadingByIdQuery(id);
-            var reading = await sender.Send(query);
-            return TypedResults.Ok(reading.ToDto());
-        }
-        catch (NotFoundException ex)
-        {
-            return TypedResults.NotFound(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            return TypedResults.Problem(ex.StackTrace, ex.Message, StatusCodes.Status500InternalServerError);
-        }
+        var query = new GetReadingByIdQuery(id);
+        var reading = await sender.Send(query);
+        return TypedResults.Ok(reading.ToDto());
     }
 
-    public static async Task<Results<Ok<List<ReadingDto>>, ProblemHttpResult>> GetReadingsByMeter(
+    public static async Task<Ok<List<ReadingDto>>> GetReadingsByMeter(
         [Validate][FromRoute] Guid meterId,
         [FromServices] ISender sender)
     {
-        try
-        {
-            var query = new GetReadingsByMeterQuery(meterId);
-            var readings = await sender.Send(query);
-            return TypedResults.Ok(readings.ToDtoList());
-        }
-        catch (Exception ex)
-        {
-            return TypedResults.Problem(ex.StackTrace, ex.Message, StatusCodes.Status500InternalServerError);
-        }
+        var query = new GetReadingsByMeterQuery(meterId);
+        var readings = await sender.Send(query);
+        return TypedResults.Ok(readings.ToDtoList());
     }
 
-    public static async Task<Results<Ok<List<ReadingDto>>, ProblemHttpResult>> GetReadingsByProperty(
+    public static async Task<Ok<List<ReadingDto>>> GetReadingsByProperty(
         [Validate][FromRoute] Guid propertyId,
         [FromServices] ISender sender)
     {
-        try
-        {
-            var query = new GetReadingsByPropertyQuery(propertyId);
-            var readings = await sender.Send(query);
-            return TypedResults.Ok(readings.ToDtoList());
-        }
-        catch (Exception ex)
-        {
-            return TypedResults.Problem(ex.StackTrace, ex.Message, StatusCodes.Status500InternalServerError);
-        }
+        var query = new GetReadingsByPropertyQuery(propertyId);
+        var readings = await sender.Send(query);
+        return TypedResults.Ok(readings.ToDtoList());
     }
 
-    public static async Task<Results<Ok<List<ReadingDto>>, ProblemHttpResult>> GetReadingsByBillingPeriod(
+    public static async Task<Ok<List<ReadingDto>>> GetReadingsByBillingPeriod(
         [Validate][FromRoute] Guid billingPeriodId,
         [FromServices] ISender sender)
     {
-        try
-        {
-            var query = new GetReadingsByBillingPeriodQuery(billingPeriodId);
-            var readings = await sender.Send(query);
-            return TypedResults.Ok(readings.ToDtoList());
-        }
-        catch (Exception ex)
-        {
-            return TypedResults.Problem(ex.StackTrace, ex.Message, StatusCodes.Status500InternalServerError);
-        }
+        var query = new GetReadingsByBillingPeriodQuery(billingPeriodId);
+        var readings = await sender.Send(query);
+        return TypedResults.Ok(readings.ToDtoList());
     }
 }

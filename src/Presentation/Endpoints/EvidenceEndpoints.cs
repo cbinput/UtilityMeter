@@ -22,7 +22,7 @@ public static class EvidenceEndpoints
             .WithTags("evidence")
             .WithDescription("Upload and manage evidence for meter readings");
 
-        _ = root.MapPost("/upload", UploadEvidence)
+        root.MapPost("/upload", UploadEvidence)
             .Produces<UploadEvidenceResponse>(StatusCodes.Status201Created)
             .ProducesValidationProblem()
             .ProducesProblem(StatusCodes.Status500InternalServerError)
@@ -30,7 +30,7 @@ public static class EvidenceEndpoints
             .WithDescription("\n    POST /evidence/upload")
             .Accepts<IFormFile>("multipart/form-data");
 
-        _ = root.MapPost("/attach", AttachEvidenceToReading)
+        root.MapPost("/attach", AttachEvidenceToReading)
             .Produces<AttachEvidenceToReadingResponse>(StatusCodes.Status200OK)
             .ProducesValidationProblem()
             .ProducesProblem(StatusCodes.Status404NotFound)
@@ -38,7 +38,7 @@ public static class EvidenceEndpoints
             .WithSummary("Attach evidence to a reading")
             .WithDescription("\n    POST /evidence/attach");
 
-        _ = root.MapGet("/reading/{readingId}", GetEvidenceByReading)
+        root.MapGet("/reading/{readingId}", GetEvidenceByReading)
             .Produces<List<EvidenceDto>>()
             .ProducesProblem(StatusCodes.Status500InternalServerError)
             .WithSummary("Get all evidence for a reading")
@@ -47,63 +47,38 @@ public static class EvidenceEndpoints
         return app;
     }
 
-    public static async Task<Results<Created<UploadEvidenceResponse>, ValidationProblem, ProblemHttpResult>> UploadEvidence(
+    public static async Task<Results<Created<UploadEvidenceResponse>, ProblemHttpResult>> UploadEvidence(
         IFormFile file,
         [FromServices] ISender sender)
     {
-        try
+        if (file is null || file.Length == 0)
         {
-            if (file == null || file.Length == 0)
-            {
-                return TypedResults.Problem("No file provided", "File is required", StatusCodes.Status400BadRequest);
-            }
-
-            using var stream = file.OpenReadStream();
-            var command = new UploadEvidenceCommand(file.FileName, file.ContentType, stream);
-            var result = await sender.Send(command);
-
-            return TypedResults.Created($"/api/evidence/{result.Id}", result);
+            return TypedResults.Problem("File is required", statusCode: StatusCodes.Status400BadRequest);
         }
-        catch (Exception ex)
-        {
-            return TypedResults.Problem(ex.StackTrace, ex.Message, StatusCodes.Status500InternalServerError);
-        }
+
+        await using var stream = file.OpenReadStream();
+        var command = new UploadEvidenceCommand(file.FileName, file.ContentType, stream);
+        var result = await sender.Send(command);
+
+        return TypedResults.Created($"/api/evidence/{result.Id}", result);
     }
 
-    public static async Task<Results<Ok<AttachEvidenceToReadingResponse>, ValidationProblem, NotFound<string>, ProblemHttpResult>> AttachEvidenceToReading(
+    public static async Task<Ok<AttachEvidenceToReadingResponse>> AttachEvidenceToReading(
         [Validate][FromBody] AttachEvidenceRequest request,
         [FromServices] ISender sender)
     {
-        try
-        {
-            var command = new AttachEvidenceToReadingCommand(request.ReadingId, request.EvidenceId);
-            var result = await sender.Send(command);
-            return TypedResults.Ok(result);
-        }
-        catch (NotFoundException ex)
-        {
-            return TypedResults.NotFound(ex.Message);
-        }
-        catch (Exception ex)
-        {
-            return TypedResults.Problem(ex.StackTrace, ex.Message, StatusCodes.Status500InternalServerError);
-        }
+        var command = new AttachEvidenceToReadingCommand(request.ReadingId, request.EvidenceId);
+        var result = await sender.Send(command);
+        return TypedResults.Ok(result);
     }
 
-    public static async Task<Results<Ok<List<EvidenceDto>>, ProblemHttpResult>> GetEvidenceByReading(
+    public static async Task<Ok<List<EvidenceDto>>> GetEvidenceByReading(
         [Validate][FromRoute] Guid readingId,
         [FromServices] ISender sender)
     {
-        try
-        {
-            var query = new GetEvidenceByReadingQuery(readingId);
-            var evidences = await sender.Send(query);
-            return TypedResults.Ok(evidences.ToDtoList());
-        }
-        catch (Exception ex)
-        {
-            return TypedResults.Problem(ex.StackTrace, ex.Message, StatusCodes.Status500InternalServerError);
-        }
+        var query = new GetEvidenceByReadingQuery(readingId);
+        var evidences = await sender.Send(query);
+        return TypedResults.Ok(evidences.ToDtoList());
     }
 }
 

@@ -24,7 +24,7 @@ public sealed class EnqueueOcrExtractionJobHandler(IBackgroundJobQueue queue, IL
     private readonly IBackgroundJobQueue queue = queue ?? throw new ArgumentNullException(nameof(queue));
     private readonly ILogger logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-    public async Task<Unit> Handle(EnqueueOcrExtractionJobCommand request, CancellationToken cancellationToken)
+    public async Task Handle(EnqueueOcrExtractionJobCommand request, CancellationToken cancellationToken)
     {
         this.logger.Information("Queueing OCR extraction job for evidence {EvidenceId}", request.EvidenceId);
 
@@ -35,8 +35,6 @@ public sealed class EnqueueOcrExtractionJobHandler(IBackgroundJobQueue queue, IL
                 JsonSerializer.Serialize(new OcrExtractionJobPayload(request.EvidenceId)),
                 DateTimeOffset.UtcNow),
             cancellationToken);
-
-        return Unit.Value;
     }
 }
 
@@ -46,7 +44,7 @@ public sealed class EnqueueReportGenerationJobHandler(IBackgroundJobQueue queue,
     private readonly IBackgroundJobQueue queue = queue ?? throw new ArgumentNullException(nameof(queue));
     private readonly ILogger logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-    public async Task<Unit> Handle(EnqueueReportGenerationJobCommand request, CancellationToken cancellationToken)
+    public async Task Handle(EnqueueReportGenerationJobCommand request, CancellationToken cancellationToken)
     {
         this.logger.Information("Queueing report generation job for billing period {BillingPeriodId}", request.BillingPeriodId);
 
@@ -57,8 +55,6 @@ public sealed class EnqueueReportGenerationJobHandler(IBackgroundJobQueue queue,
                 JsonSerializer.Serialize(new ReportGenerationJobPayload(request.BillingPeriodId)),
                 DateTimeOffset.UtcNow),
             cancellationToken);
-
-        return Unit.Value;
     }
 }
 
@@ -68,7 +64,7 @@ public sealed class EnqueueAnomalyAnalysisJobHandler(IBackgroundJobQueue queue, 
     private readonly IBackgroundJobQueue queue = queue ?? throw new ArgumentNullException(nameof(queue));
     private readonly ILogger logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-    public async Task<Unit> Handle(EnqueueAnomalyAnalysisJobCommand request, CancellationToken cancellationToken)
+    public async Task Handle(EnqueueAnomalyAnalysisJobCommand request, CancellationToken cancellationToken)
     {
         this.logger.Information("Queueing anomaly analysis job for billing period {BillingPeriodId}", request.BillingPeriodId);
 
@@ -79,8 +75,6 @@ public sealed class EnqueueAnomalyAnalysisJobHandler(IBackgroundJobQueue queue, 
                 JsonSerializer.Serialize(new AnomalyAnalysisJobPayload(request.BillingPeriodId)),
                 DateTimeOffset.UtcNow),
             cancellationToken);
-
-        return Unit.Value;
     }
 }
 
@@ -90,7 +84,7 @@ public sealed class EnqueueExportJobHandler(IBackgroundJobQueue queue, ILogger l
     private readonly IBackgroundJobQueue queue = queue ?? throw new ArgumentNullException(nameof(queue));
     private readonly ILogger logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-    public async Task<Unit> Handle(EnqueueExportJobCommand request, CancellationToken cancellationToken)
+    public async Task Handle(EnqueueExportJobCommand request, CancellationToken cancellationToken)
     {
         this.logger.Information("Queueing export job for billing period {BillingPeriodId}", request.BillingPeriodId);
         var jobId = Guid.NewGuid();
@@ -102,8 +96,6 @@ public sealed class EnqueueExportJobHandler(IBackgroundJobQueue queue, ILogger l
                 JsonSerializer.Serialize(new ExportJobPayload(request.BillingPeriodId, jobId)),
                 DateTimeOffset.UtcNow),
             cancellationToken);
-
-        return Unit.Value;
     }
 }
 
@@ -113,17 +105,16 @@ public sealed class ProcessOcrExtractionJobHandler(IEvidenceRepository evidenceR
     private readonly IEvidenceRepository evidenceRepository = evidenceRepository ?? throw new ArgumentNullException(nameof(evidenceRepository));
     private readonly ILogger logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-    public async Task<Unit> Handle(ProcessOcrExtractionJobCommand request, CancellationToken cancellationToken)
+    public async Task Handle(ProcessOcrExtractionJobCommand request, CancellationToken cancellationToken)
     {
         var evidence = await this.evidenceRepository.GetByIdAsync(request.EvidenceId, cancellationToken);
         if (evidence == null)
         {
             this.logger.Warning("Skipping OCR extraction because evidence {EvidenceId} was not found", request.EvidenceId);
-            return Unit.Value;
+            return;
         }
 
         this.logger.Information("Processed OCR extraction job for evidence {EvidenceId} and storage key {StorageKey}", evidence.Id, evidence.StorageKey);
-        return Unit.Value;
     }
 }
 
@@ -133,11 +124,10 @@ public sealed class ProcessReportGenerationJobHandler(ISender sender, ILogger lo
     private readonly ISender sender = sender ?? throw new ArgumentNullException(nameof(sender));
     private readonly ILogger logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-    public async Task<Unit> Handle(ProcessReportGenerationJobCommand request, CancellationToken cancellationToken)
+    public async Task Handle(ProcessReportGenerationJobCommand request, CancellationToken cancellationToken)
     {
         var summary = await this.sender.Send(new GetMonthlySummaryQuery(request.BillingPeriodId), cancellationToken);
         this.logger.Information("Processed report generation job for billing period {BillingPeriodId} with {ReadingCount} readings", request.BillingPeriodId, summary.ReadingCount);
-        return Unit.Value;
     }
 }
 
@@ -147,11 +137,10 @@ public sealed class ProcessAnomalyAnalysisJobHandler(ISender sender, ILogger log
     private readonly ISender sender = sender ?? throw new ArgumentNullException(nameof(sender));
     private readonly ILogger logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-    public async Task<Unit> Handle(ProcessAnomalyAnalysisJobCommand request, CancellationToken cancellationToken)
+    public async Task Handle(ProcessAnomalyAnalysisJobCommand request, CancellationToken cancellationToken)
     {
         var abnormalities = await this.sender.Send(new GetAbnormalReadingsQuery(request.BillingPeriodId), cancellationToken);
         this.logger.Information("Processed anomaly analysis job for billing period {BillingPeriodId} and found {Count} abnormal readings", request.BillingPeriodId, abnormalities.Count);
-        return Unit.Value;
     }
 }
 
@@ -162,7 +151,7 @@ public sealed class ProcessExportJobHandler(ISender sender, IObjectStorage objec
     private readonly IObjectStorage objectStorage = objectStorage ?? throw new ArgumentNullException(nameof(objectStorage));
     private readonly ILogger logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-    public async Task<Unit> Handle(ProcessExportJobCommand request, CancellationToken cancellationToken)
+    public async Task Handle(ProcessExportJobCommand request, CancellationToken cancellationToken)
     {
         var summary = await this.sender.Send(new GetMonthlySummaryQuery(request.BillingPeriodId), cancellationToken);
         var payload = JsonSerializer.SerializeToUtf8Bytes(summary);
@@ -171,6 +160,5 @@ public sealed class ProcessExportJobHandler(ISender sender, IObjectStorage objec
         var uploadedKey = await this.objectStorage.UploadAsync(stream, key, "application/json", cancellationToken);
 
         this.logger.Information("Processed export job for billing period {BillingPeriodId} and stored output at {StorageKey}", request.BillingPeriodId, uploadedKey);
-        return Unit.Value;
     }
 }

@@ -12,36 +12,46 @@ public static class WebApplicationExtensions
     {
         #region Logging
 
-        _ = app.UseHttpLogging();
-        _ = app.UseSerilogRequestLogging();
+        app.UseExceptionHandler();
+        app.UseHttpLogging();
+        app.UseSerilogRequestLogging();
 
         #endregion Logging
 
         #region Security
 
-        _ = app.UseHsts();
+        if (!app.Environment.IsDevelopment() && !app.Environment.IsEnvironment("local"))
+        {
+            app.UseHsts();
+        }
 
         #endregion Security
 
         #region API Configuration
 
-        _ = app.UseHttpsRedirection();
+        if (!app.Environment.IsDevelopment() && !app.Environment.IsEnvironment("local"))
+        {
+            app.UseHttpsRedirection();
+        }
 
         #endregion API Configuration
 
         #region Swagger
 
-        _ = app.MapOpenApi();
-        _ = app.UseSwaggerUI(options => options.SwaggerEndpoint("/openapi/v1.json", "CleanMinimalApi API v1"));
+        if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("local"))
+        {
+            app.MapOpenApi();
+            app.UseSwaggerUI(options => options.SwaggerEndpoint("/openapi/v1.json", "CleanMinimalApi API v1"));
+        }
 
         #endregion Swagger
 
         #region MinimalApi
 
-        _ = app.MapVersionEndpoints();
-        _ = app.MapReadingEndpoints();
-        _ = app.MapEvidenceEndpoints();
-        _ = app.MapReportEndpoints();
+        app.MapVersionEndpoints();
+        app.MapReadingEndpoints();
+        app.MapEvidenceEndpoints();
+        app.MapReportEndpoints();
 
         #endregion MinimalApi
 
