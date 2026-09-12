@@ -77,9 +77,11 @@ dotnet run --project ./src/Presentation
 dotnet run --project ./src/Worker
 ```
 
-Local API URLs from the launch profile:
+Example local API URLs from the current launch profile:
 - https://localhost:7032/swagger
 - http://localhost:5032/swagger
+
+If these ports change, check `/home/runner/work/UtilityMeter/UtilityMeter/src/Presentation/Properties/launchSettings.json`.
 
 ## Repository structure
 
