@@ -14,7 +14,7 @@ public static class VersionEndpoints
         var root = app.MapGroup("/api/version")
             .WithTags("version");
 
-        _ = root.MapGet("/", GetVersion)
+        root.MapGet("/", GetVersion)
             .Produces<Entities.Version>()
             .ProducesProblem(StatusCodes.Status500InternalServerError)
             .WithSummary("Lookup the application version details")
@@ -23,15 +23,8 @@ public static class VersionEndpoints
         return app;
     }
 
-    public static async Task<Results<Ok<Entities.Version>, ProblemHttpResult>> GetVersion(ISender sender)
+    public static async Task<Ok<Entities.Version>> GetVersion(ISender sender)
     {
-        try
-        {
-            return TypedResults.Ok(await sender.Send(new Queries.GetVersion.GetVersionQuery()));
-        }
-        catch (Exception ex)
-        {
-            return TypedResults.Problem(ex.StackTrace, ex.Message, StatusCodes.Status500InternalServerError);
-        }
+        return TypedResults.Ok(await sender.Send(new Queries.GetVersion.GetVersionQuery()));
     }
 }

@@ -17,15 +17,15 @@ public sealed class QueuedBackgroundWorker(IBackgroundJobQueue jobQueue, ISender
         {
             try
             {
-                logger.LogInformation("Processing background job {JobType}", job.JobType);
+                WorkerLogMessages.ProcessingBackgroundJob(logger, job.JobType);
                 await ProcessAsync(job, sender, stoppingToken);
                 await jobQueue.CompleteAsync(job.Id, succeeded: true, stoppingToken);
-                logger.LogInformation("Finished background job {JobType}", job.JobType);
+                WorkerLogMessages.FinishedBackgroundJob(logger, job.JobType);
             }
             catch (Exception ex)
             {
                 await jobQueue.CompleteAsync(job.Id, succeeded: false, stoppingToken);
-                logger.LogError(ex, "Background job {JobType} failed", job.JobType);
+                WorkerLogMessages.BackgroundJobFailed(logger, job.JobType, ex);
             }
         }
     }
@@ -47,15 +47,17 @@ public sealed class QueuedBackgroundWorker(IBackgroundJobQueue jobQueue, ISender
             BackgroundJobTypes.AnomalyAnalysis => sender.Send(
                 new ProcessAnomalyAnalysisJobCommand(DeserializePayload<AnomalyAnalysisJobPayload>(job.Payload).BillingPeriodId),
                 cancellationToken),
-            BackgroundJobTypes.Export => ProcessExportAsync(job.Payload, sender, cancellationToken),
+            BackgroundJobTypes.Export => sender.Send(
+                CreateExportCommand(job.Payload),
+                cancellationToken),
             _ => throw new InvalidOperationException($"Unsupported background job type '{job.JobType}'.")
         };
     }
 
-    private static Task ProcessExportAsync(string payload, ISender sender, CancellationToken cancellationToken)
+    private static ProcessExportJobCommand CreateExportCommand(string payload)
     {
         var export = JsonSerializer.Deserialize<ExportJobPayload>(payload)
             ?? throw new InvalidOperationException("Background job payload was invalid.");
-        return sender.Send(new ProcessExportJobCommand(export.BillingPeriodId, export.JobId), cancellationToken);
+        return new ProcessExportJobCommand(export.BillingPeriodId, export.JobId);
     }
 }

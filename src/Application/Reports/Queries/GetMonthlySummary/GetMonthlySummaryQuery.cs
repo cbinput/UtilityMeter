@@ -14,21 +14,39 @@ public sealed class GetMonthlySummaryHandler(IReadingsRepository readingsReposit
     public async Task<MonthlySummaryDto> Handle(GetMonthlySummaryQuery request, CancellationToken cancellationToken)
     {
         var readings = await this.readingsRepository.GetByBillingPeriodIdAsync(request.BillingPeriodId, cancellationToken);
-        var resident = readings.Where(reading => reading.Source.Equals("Resident", StringComparison.OrdinalIgnoreCase)).Sum(reading => reading.Value);
-        var company = readings.Where(reading => reading.Source.Equals("Company", StringComparison.OrdinalIgnoreCase)).Sum(reading => reading.Value);
-        var hasResident = readings.Any(reading => reading.Source.Equals("Resident", StringComparison.OrdinalIgnoreCase));
-        var hasCompany = readings.Any(reading => reading.Source.Equals("Company", StringComparison.OrdinalIgnoreCase));
-        var mismatch = hasResident && hasCompany && resident != company;
-        decimal? mismatchPercentage = mismatch && company != 0m ? Math.Abs(resident - company) / company * 100m : null;
+        var groupedReadings = readings
+            .GroupBy(reading => new
+            {
+                reading.MeterId,
+                reading.PropertyId,
+                Source = reading.Source.Trim().ToUpperInvariant()
+            })
+            .Select(group => group
+                .OrderByDescending(reading => reading.MeasuredAt)
+                .First())
+            .ToList();
+        var residentReadings = groupedReadings
+            .Where(reading => reading.Source.Equals("Resident", StringComparison.OrdinalIgnoreCase))
+            .ToDictionary(reading => (reading.MeterId, reading.PropertyId));
+        var companyReadings = groupedReadings
+            .Where(reading => reading.Source.Equals("Company", StringComparison.OrdinalIgnoreCase))
+            .ToDictionary(reading => (reading.MeterId, reading.PropertyId));
+        var matchedKeys = residentReadings.Keys.Intersect(companyReadings.Keys).ToList();
+        var mismatchCount = matchedKeys.Count(key => residentReadings[key].Value != companyReadings[key].Value);
+        var resident = residentReadings.Count > 0 ? residentReadings.Values.Sum(reading => reading.Value) : (decimal?)null;
+        var company = companyReadings.Count > 0 ? companyReadings.Values.Sum(reading => reading.Value) : (decimal?)null;
+        decimal? mismatchPercentage = resident.HasValue && company.HasValue && company.Value != 0m
+            ? Math.Abs(resident.Value - company.Value) / company.Value * 100m
+            : null;
 
         return new MonthlySummaryDto(
             request.BillingPeriodId,
             readings.Count,
             readings.Count(reading => reading.Status == "Pending"),
             readings.Count(reading => reading.Alerts.Count > 0),
-            mismatch ? 1 : 0,
-            hasResident ? resident : null,
-            hasCompany ? company : null,
+            mismatchCount,
+            resident,
+            company,
             mismatchPercentage);
     }
 }

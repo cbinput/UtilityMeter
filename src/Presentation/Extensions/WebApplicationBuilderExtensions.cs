@@ -9,6 +9,7 @@ using Application;
 using CleanMinimalApi.Presentation.Serialization;
 using FluentValidation;
 using Infrastructure;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http.Json;
 using Microsoft.AspNetCore.HttpLogging;
@@ -55,6 +56,9 @@ public static class WebApplicationBuilderExtensions
 
         #endregion Serialisation
 
+        builder.Services.AddProblemDetails();
+        builder.Services.AddExceptionHandler<ApiExceptionHandler>();
+
         #region Swagger
 
         var ti = CultureInfo.CurrentCulture.TextInfo;
@@ -87,7 +91,7 @@ public static class WebApplicationBuilderExtensions
 
         #region Validation
 
-        _ = builder.Services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly(), ServiceLifetime.Singleton);
+        builder.Services.AddValidatorsFromAssemblyContaining<Validators.GenericIdentityValidator>(ServiceLifetime.Singleton);
 
         #endregion Validation
 
