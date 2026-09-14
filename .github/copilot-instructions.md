@@ -106,3 +106,14 @@ OCR (behind an `IMeterReadingExtractor` interface, swappable implementation), ML
 ## Explicitly out of scope for now
 
 Kubernetes, microservices, complex event streaming, multiple databases, ML, mandatory OCR, Redis (unless a real need appears), complex orchestration.
+
+## Task to skill index
+
+When a task matches one of these recurring areas, load the corresponding project skill from `/.github/skills/` before making changes:
+
+| Task pattern | Skill |
+| --- | --- |
+| Add or modify a feature across endpoint, handler, repository, and tests | `feature-slice` |
+| Change readings, evidence, alerts, billing comparisons, or condominium reconciliation | `meter-reading-domain` |
+| Change OCR/report/export background work, queue handling, or object storage | `worker-storage` |
+| Validate builds, tests, Docker behavior, or end-to-end runtime setup | `dotnet-validation` |
