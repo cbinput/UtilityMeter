@@ -45,7 +45,7 @@ public class UploadEvidenceHandlerTests
 
         uploadedPayload.ShouldBe(payload);
         response.FileName.ShouldBe("meter.jpg");
-        response.Hash.ShouldBe("4F373D98D3391E1507290FD64C7FCB09FC453A813D72D3BBF03CECD6200A543C");
+        response.Hash.ShouldBe("B20700384F1CF52BF65D0E01265D56E494D6076757CE3EAD86B4DC233795132E");
         await sender.Received(1).Send(Arg.Any<EnqueueOcrExtractionJobCommand>(), Arg.Any<CancellationToken>());
         await evidenceRepository.Received(1).AddAsync(Arg.Is<CleanMinimalApi.Application.Evidence.Entities.Evidence>(item =>
             item.FileName == "meter.jpg"

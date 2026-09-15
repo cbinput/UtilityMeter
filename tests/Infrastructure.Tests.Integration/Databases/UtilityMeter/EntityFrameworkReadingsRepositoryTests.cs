@@ -162,7 +162,7 @@ public class EntityFrameworkReadingsRepositoryTests
             MeasuredAt = DateTimeOffset.UtcNow.AddDays(-1),
             Source = "Resident",
             Status = "Warning",
-            Alerts = { new ReadingAlert { Message = "abnormal", Severity = AlertSeverity.Warning, Type = AlertType.HighConsumption } }
+            Alerts = { new Alert { Message = "abnormal", Severity = AlertSeverity.Warning, Type = AlertType.AbnormallyHighConsumption } }
         });
         await repository.AddAsync(new Reading
         {
