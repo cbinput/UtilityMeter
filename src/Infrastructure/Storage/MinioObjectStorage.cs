@@ -3,45 +3,40 @@ namespace CleanMinimalApi.Infrastructure.Storage;
 using Application.Storage;
 using Microsoft.Extensions.Options;
 using Minio;
+using Minio.DataModel;
 using Minio.DataModel.Args;
 using Minio.Exceptions;
 
-internal sealed class MinioObjectStorage(IOptions<MinioStorageOptions> options) : IObjectStorage
+internal sealed class MinioObjectStorage(IMinioClient client, IOptions<MinioStorageOptions> options) : IObjectStorage
 {
+    private readonly IMinioClient client = client ?? throw new ArgumentNullException(nameof(client));
     private readonly MinioStorageOptions options = options?.Value ?? throw new ArgumentNullException(nameof(options));
-
-    private IMinioClient Client => new MinioClient()
-        .WithEndpoint(this.options.Endpoint)
-        .WithCredentials(this.options.AccessKey, this.options.SecretKey)
-        .WithSSL(this.options.UseSsl)
-        .Build();
 
     public async Task<string> UploadAsync(Stream content, string key, string contentType, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(content);
         ArgumentException.ThrowIfNullOrWhiteSpace(key);
 
-        await this.EnsureBucketExistsAsync(cancellationToken);
-
         var streamToUpload = await ToSeekableStreamAsync(content, cancellationToken);
+        await using var disposableStream = content.CanSeek ? null : streamToUpload;
         streamToUpload.Seek(0, SeekOrigin.Begin);
-        var size = streamToUpload.Length - streamToUpload.Position;
+        var size = streamToUpload.Length;
 
-        var putObjectArgs = new PutObjectArgs()
-            .WithBucket(this.options.BucketName)
-            .WithObject(key)
-            .WithStreamData(streamToUpload)
-            .WithObjectSize(size)
-            .WithContentType(contentType);
+        await this.client.PutObjectAsync(
+            new PutObjectArgs()
+                .WithBucket(this.options.BucketName)
+                .WithObject(key)
+                .WithStreamData(streamToUpload)
+                .WithObjectSize(size)
+                .WithContentType(contentType),
+            cancellationToken);
 
-        await this.Client.PutObjectAsync(putObjectArgs, cancellationToken);
         return key;
     }
 
     public async Task<Stream> DownloadAsync(string key, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(key);
-        await this.EnsureBucketExistsAsync(cancellationToken);
 
         var memoryStream = new MemoryStream();
         var getObjectArgs = new GetObjectArgs()
@@ -49,7 +44,7 @@ internal sealed class MinioObjectStorage(IOptions<MinioStorageOptions> options) 
             .WithObject(key)
             .WithCallbackStream(stream => stream.CopyTo(memoryStream));
 
-        await this.Client.GetObjectAsync(getObjectArgs, cancellationToken);
+        await this.client.GetObjectAsync(getObjectArgs, cancellationToken);
         memoryStream.Seek(0, SeekOrigin.Begin);
         return memoryStream;
     }
@@ -57,57 +52,57 @@ internal sealed class MinioObjectStorage(IOptions<MinioStorageOptions> options) 
     public async Task DeleteAsync(string key, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(key);
-        await this.EnsureBucketExistsAsync(cancellationToken);
 
         var removeObjectArgs = new RemoveObjectArgs()
             .WithBucket(this.options.BucketName)
             .WithObject(key);
 
-        await this.Client.RemoveObjectAsync(removeObjectArgs, cancellationToken);
+        await this.client.RemoveObjectAsync(removeObjectArgs, cancellationToken);
     }
 
     public async Task<bool> ExistsAsync(string key, CancellationToken cancellationToken = default)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(key);
-        await this.EnsureBucketExistsAsync(cancellationToken);
+        return await this.GetMetadataAsync(key, cancellationToken) is not null;
+    }
 
-        var statObjectArgs = new StatObjectArgs()
-            .WithBucket(this.options.BucketName)
-            .WithObject(key);
+    public async Task<ObjectStorageMetadata?> GetMetadataAsync(string key, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(key);
 
         try
         {
-            _ = await this.Client.StatObjectAsync(statObjectArgs, cancellationToken);
-            return true;
+            var objectStat = await this.client.StatObjectAsync(
+                new StatObjectArgs()
+                    .WithBucket(this.options.BucketName)
+                    .WithObject(key),
+                cancellationToken);
+
+            return ToMetadata(key, objectStat);
         }
         catch (ObjectNotFoundException)
         {
-            return false;
+            return null;
         }
     }
 
-    private async Task EnsureBucketExistsAsync(CancellationToken cancellationToken)
+    private static ObjectStorageMetadata ToMetadata(string key, ObjectStat objectStat)
     {
-        var bucketExistsArgs = new BucketExistsArgs().WithBucket(this.options.BucketName);
-        var bucketExists = await this.Client.BucketExistsAsync(bucketExistsArgs, cancellationToken);
-        if (bucketExists)
+        Dictionary<string, string> metadata = new(StringComparer.Ordinal);
+        foreach (var entry in objectStat.MetaData)
         {
-            return;
-        }
-
-        var makeBucketArgs = new MakeBucketArgs().WithBucket(this.options.BucketName);
-        try
-        {
-            await this.Client.MakeBucketAsync(makeBucketArgs, cancellationToken);
-        }
-        catch (MinioException)
-        {
-            var existsAfterError = await this.Client.BucketExistsAsync(bucketExistsArgs, cancellationToken);
-            if (!existsAfterError)
+            if (!string.IsNullOrWhiteSpace(entry.Key) && entry.Value is not null)
             {
-                throw;
+                metadata[entry.Key] = entry.Value;
             }
         }
+
+        return new ObjectStorageMetadata(
+            key,
+            objectStat.Size,
+            objectStat.ContentType,
+            objectStat.ETag,
+            objectStat.LastModified == default ? null : new DateTimeOffset(objectStat.LastModified),
+            metadata);
     }
 
     private static async Task<Stream> ToSeekableStreamAsync(Stream source, CancellationToken cancellationToken)
@@ -117,9 +112,20 @@ internal sealed class MinioObjectStorage(IOptions<MinioStorageOptions> options) 
             return source;
         }
 
-        var memoryStream = new MemoryStream();
-        await source.CopyToAsync(memoryStream, cancellationToken);
-        memoryStream.Seek(0, SeekOrigin.Begin);
-        return memoryStream;
+        var directory = Path.Combine(Path.GetTempPath(), "utilitymeter");
+        Directory.CreateDirectory(directory);
+
+        var tempPath = Path.Combine(directory, $"minio-upload-{Guid.NewGuid():N}.tmp");
+        var tempStream = new FileStream(
+            tempPath,
+            FileMode.CreateNew,
+            FileAccess.ReadWrite,
+            FileShare.None,
+            bufferSize: 81_920,
+            FileOptions.Asynchronous | FileOptions.SequentialScan | FileOptions.DeleteOnClose);
+
+        await source.CopyToAsync(tempStream, cancellationToken);
+        tempStream.Seek(0, SeekOrigin.Begin);
+        return tempStream;
     }
 }

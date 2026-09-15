@@ -13,22 +13,11 @@ public sealed class GetMonthlySummaryHandler(IReadingsRepository readingsReposit
 
     public async Task<MonthlySummaryDto> Handle(GetMonthlySummaryQuery request, CancellationToken cancellationToken)
     {
-        var readings = await this.readingsRepository.GetByBillingPeriodIdAsync(request.BillingPeriodId, cancellationToken);
-        var groupedReadings = readings
-            .GroupBy(reading => new
-            {
-                reading.MeterId,
-                reading.PropertyId,
-                Source = reading.Source.Trim().ToUpperInvariant()
-            })
-            .Select(group => group
-                .OrderByDescending(reading => reading.MeasuredAt)
-                .First())
-            .ToList();
-        var residentReadings = groupedReadings
+        var summary = await this.readingsRepository.GetMonthlySummarySnapshotAsync(request.BillingPeriodId, cancellationToken);
+        var residentReadings = summary.LatestReadingsBySource
             .Where(reading => reading.Source.Equals("Resident", StringComparison.OrdinalIgnoreCase))
             .ToDictionary(reading => (reading.MeterId, reading.PropertyId));
-        var companyReadings = groupedReadings
+        var companyReadings = summary.LatestReadingsBySource
             .Where(reading => reading.Source.Equals("Company", StringComparison.OrdinalIgnoreCase))
             .ToDictionary(reading => (reading.MeterId, reading.PropertyId));
         var matchedKeys = residentReadings.Keys.Intersect(companyReadings.Keys).ToList();
@@ -41,9 +30,9 @@ public sealed class GetMonthlySummaryHandler(IReadingsRepository readingsReposit
 
         return new MonthlySummaryDto(
             request.BillingPeriodId,
-            readings.Count,
-            readings.Count(reading => reading.Status == "Pending"),
-            readings.Count(reading => reading.Alerts.Count > 0),
+            summary.ReadingCount,
+            summary.PendingCount,
+            summary.AbnormalCount,
             mismatchCount,
             resident,
             company,

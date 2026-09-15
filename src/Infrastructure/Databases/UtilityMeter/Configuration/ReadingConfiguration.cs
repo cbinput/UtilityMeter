@@ -66,5 +66,9 @@ internal class ReadingConfiguration : IEntityTypeConfiguration<Reading>
         _ = builder.HasIndex(r => r.MeterId);
         _ = builder.HasIndex(r => r.PropertyId);
         _ = builder.HasIndex(r => r.BillingPeriodId);
+        _ = builder.HasIndex(r => new { r.MeterId, r.MeasuredAt });
+        _ = builder.HasIndex(r => new { r.BillingPeriodId, r.MeasuredAt });
+        _ = builder.HasIndex(r => new { r.BillingPeriodId, r.Status });
+        _ = builder.HasIndex(r => new { r.PropertyId, r.MeasuredAt });
     }
 }

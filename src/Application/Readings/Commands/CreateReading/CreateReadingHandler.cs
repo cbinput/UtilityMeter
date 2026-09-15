@@ -50,18 +50,7 @@ public sealed class CreateReadingHandler(IReadingsRepository readingsRepository,
         // Check for consumption anomaly
         if (previousReading != null)
         {
-            var historicalReadings = await this.readingsRepository.GetByMeterIdAsync(request.MeterId, cancellationToken);
-            var historicalReadingsById = historicalReadings.ToDictionary(item => item.Id);
-            var historicalConsumptions = historicalReadings
-                .Where(item => item.PreviousReadingId.HasValue)
-                .Select(item => item.PreviousReadingId.HasValue && historicalReadingsById.TryGetValue(item.PreviousReadingId.Value, out var previous)
-                    ? item.Value - previous.Value
-                    : (decimal?)null)
-                .Where(consumption => consumption.HasValue)
-                .Select(consumption => consumption!.Value)
-                .Where(consumption => consumption > 0m)
-                .ToList();
-            var historicalAverage = historicalConsumptions.Count == 0 ? 0m : historicalConsumptions.Average();
+            var historicalAverage = await this.readingsRepository.GetHistoricalAverageConsumptionAsync(request.MeterId, cancellationToken);
             reading.Alerts.AddRange(Reading.GetAlerts(previousReading, reading, historicalAverage));
             if (reading.Alerts.Count > 0)
             {

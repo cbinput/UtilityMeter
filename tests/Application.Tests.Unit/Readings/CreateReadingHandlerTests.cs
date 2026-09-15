@@ -35,8 +35,8 @@ public class CreateReadingHandlerTests
 
         repository.GetPreviousByMeterAsync(meterId, measuredAt, currentPeriodId, Arg.Any<CancellationToken>())
             .Returns(previousReading);
-        repository.GetByMeterIdAsync(meterId, Arg.Any<CancellationToken>())
-            .Returns([previousReading]);
+        repository.GetHistoricalAverageConsumptionAsync(meterId, Arg.Any<CancellationToken>())
+            .Returns(0m);
         repository.AddAsync(Arg.Any<Reading>(), Arg.Any<CancellationToken>())
             .Returns(call =>
             {
@@ -61,6 +61,7 @@ public class CreateReadingHandlerTests
         response.Status.ShouldBe("Pending");
         savedReading.ShouldNotBeNull();
         savedReading.PreviousReadingId.ShouldBe(previousReading.Id);
+        await repository.Received(1).GetHistoricalAverageConsumptionAsync(meterId, Arg.Any<CancellationToken>());
         await repository.DidNotReceive().GetLatestByMeterIdAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
     }
 }

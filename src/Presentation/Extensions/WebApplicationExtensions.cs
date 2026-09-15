@@ -13,7 +13,11 @@ public static class WebApplicationExtensions
         #region Logging
 
         app.UseExceptionHandler();
-        app.UseHttpLogging();
+        if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("local"))
+        {
+            app.UseHttpLogging();
+        }
+
         app.UseSerilogRequestLogging();
 
         #endregion Logging
@@ -28,6 +32,8 @@ public static class WebApplicationExtensions
         #endregion Security
 
         #region API Configuration
+
+        app.UseResponseCompression();
 
         if (!app.Environment.IsDevelopment() && !app.Environment.IsEnvironment("local"))
         {

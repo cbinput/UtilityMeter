@@ -12,6 +12,7 @@ using Infrastructure.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Minio;
 
 public static class DependencyInjection
 {
@@ -20,12 +21,12 @@ public static class DependencyInjection
         var connectionString = configuration?.GetConnectionString("UtilityMeterDb");
         if (string.IsNullOrWhiteSpace(connectionString))
         {
-            _ = services.AddDbContext<UtilityMeterDbContext>(options =>
+            _ = services.AddDbContextPool<UtilityMeterDbContext>(options =>
                 options.UseInMemoryDatabase($"UtilityMeter-{Guid.NewGuid()}"));
         }
         else
         {
-            _ = services.AddDbContext<UtilityMeterDbContext>(options =>
+            _ = services.AddDbContextPool<UtilityMeterDbContext>(options =>
                 options.UseSqlite(connectionString));
         }
 
@@ -56,7 +57,13 @@ public static class DependencyInjection
                 UseSsl = bool.TryParse(section["UseSsl"], out var useSsl) && useSsl
             };
             _ = services.AddSingleton(Microsoft.Extensions.Options.Options.Create(minioOptions));
+            _ = services.AddSingleton<IMinioClient>(_ => new MinioClient()
+                .WithEndpoint(minioOptions.Endpoint)
+                .WithCredentials(minioOptions.AccessKey, minioOptions.SecretKey)
+                .WithSSL(minioOptions.UseSsl)
+                .Build());
             _ = services.AddSingleton<IObjectStorage, MinioObjectStorage>();
+            _ = services.AddHostedService<MinioBucketInitializationHostedService>();
         }
         else
         {
