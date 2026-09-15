@@ -13,14 +13,9 @@ public sealed class GetPendingReadingsHandler(IReadingsRepository readingsReposi
 
     public async Task<List<PendingReadingDto>> Handle(GetPendingReadingsQuery request, CancellationToken cancellationToken)
     {
-        var readings = request.BillingPeriodId.HasValue
-            ? await this.readingsRepository.GetByBillingPeriodIdAsync(request.BillingPeriodId.Value, cancellationToken)
-            : request.PropertyId.HasValue
-                ? await this.readingsRepository.GetByPropertyIdAsync(request.PropertyId.Value, cancellationToken)
-                : await this.readingsRepository.GetAllAsync(cancellationToken);
+        var readings = await this.readingsRepository.GetPendingAsync(request.BillingPeriodId, request.PropertyId, cancellationToken);
 
         return [.. readings
-            .Where(reading => reading.Status == "Pending" && (!request.PropertyId.HasValue || reading.PropertyId == request.PropertyId))
             .Select(reading => new PendingReadingDto(reading.Id, reading.PropertyId, reading.MeterId, reading.BillingPeriodId, reading.MeasuredAt))];
     }
 }

@@ -1,5 +1,6 @@
 namespace CleanMinimalApi.Application.Evidence.Commands.UploadEvidence;
 
+using System.Buffers;
 using System.Security.Cryptography;
 using CleanMinimalApi.Application.BackgroundJobs.Commands;
 using CleanMinimalApi.Application.Evidence.Entities;
@@ -19,25 +20,16 @@ public sealed class UploadEvidenceHandler(IEvidenceRepository evidenceRepository
     {
         this.logger.Information("Uploading evidence file {FileName}", request.FileName);
 
-        // Calculate hash of the content
-        string hash;
-        _ = request.Content.Seek(0, SeekOrigin.Begin);
-        using (var sha256 = SHA256.Create())
-        {
-            var hashBytes = await sha256.ComputeHashAsync(request.Content, cancellationToken);
-            hash = Convert.ToHexString(hashBytes);
-        }
-
-        // Reset stream for upload
-        request.Content.Seek(0, SeekOrigin.Begin);
+        var preparedUpload = await PrepareUploadAsync(request.Content, cancellationToken);
+        await using var uploadStream = preparedUpload.Stream;
 
         // Generate storage key
         var storageKey = $"evidence/{Guid.NewGuid()}/{request.FileName}";
 
         // Upload to object storage
-        var uploadedKey = await this.objectStorage.UploadAsync(request.Content, storageKey, request.ContentType, cancellationToken);
+        var uploadedKey = await this.objectStorage.UploadAsync(uploadStream, storageKey, request.ContentType, cancellationToken);
 
-        this.logger.Information("Evidence uploaded to storage key {StorageKey} with hash {Hash}", uploadedKey, hash);
+        this.logger.Information("Evidence uploaded to storage key {StorageKey} with hash {Hash}", uploadedKey, preparedUpload.Hash);
 
         // Create evidence record
         var evidence = new Evidence
@@ -45,7 +37,7 @@ public sealed class UploadEvidenceHandler(IEvidenceRepository evidenceRepository
             StorageKey = uploadedKey,
             FileName = request.FileName,
             ContentType = request.ContentType,
-            Hash = hash,
+            Hash = preparedUpload.Hash,
             Metadata = []
         };
 
@@ -57,4 +49,47 @@ public sealed class UploadEvidenceHandler(IEvidenceRepository evidenceRepository
 
         return new UploadEvidenceResponse(evidence.Id, evidence.FileName, evidence.StorageKey, evidence.Hash);
     }
+
+    private static async Task<PreparedUpload> PrepareUploadAsync(Stream source, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+
+        var directory = Path.Combine(Path.GetTempPath(), "utilitymeter");
+        Directory.CreateDirectory(directory);
+
+        var tempPath = Path.Combine(directory, $"evidence-upload-{Guid.NewGuid():N}.tmp");
+        var tempStream = new FileStream(
+            tempPath,
+            FileMode.CreateNew,
+            FileAccess.ReadWrite,
+            FileShare.None,
+            bufferSize: 81_920,
+            FileOptions.Asynchronous | FileOptions.SequentialScan | FileOptions.DeleteOnClose);
+
+        byte[] buffer = ArrayPool<byte>.Shared.Rent(81_920);
+        try
+        {
+            using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+            int bytesRead;
+            while ((bytesRead = await source.ReadAsync(buffer.AsMemory(0, buffer.Length), cancellationToken)) > 0)
+            {
+                hash.AppendData(buffer, 0, bytesRead);
+                await tempStream.WriteAsync(buffer.AsMemory(0, bytesRead), cancellationToken);
+            }
+
+            tempStream.Seek(0, SeekOrigin.Begin);
+            return new PreparedUpload(tempStream, Convert.ToHexString(hash.GetHashAndReset()));
+        }
+        catch
+        {
+            await tempStream.DisposeAsync();
+            throw;
+        }
+        finally
+        {
+            ArrayPool<byte>.Shared.Return(buffer);
+        }
+    }
+
+    private sealed record PreparedUpload(FileStream Stream, string Hash);
 }

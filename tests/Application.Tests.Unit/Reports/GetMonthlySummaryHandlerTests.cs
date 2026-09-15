@@ -19,14 +19,19 @@ public class GetMonthlySummaryHandlerTests
         var propertyTwo = Guid.NewGuid();
         var repository = Substitute.For<IReadingsRepository>();
 
-        repository.GetByBillingPeriodIdAsync(billingPeriodId, Arg.Any<CancellationToken>())
+        repository.GetMonthlySummarySnapshotAsync(billingPeriodId, Arg.Any<CancellationToken>())
             .Returns(
-            [
-                new Reading { MeterId = meterOne, BillingPeriodId = billingPeriodId, PropertyId = propertyOne, Source = "Resident", Value = 100m, MeasuredAt = DateTimeOffset.UtcNow },
-                new Reading { MeterId = meterOne, BillingPeriodId = billingPeriodId, PropertyId = propertyOne, Source = "Company", Value = 110m, MeasuredAt = DateTimeOffset.UtcNow },
-                new Reading { MeterId = meterTwo, BillingPeriodId = billingPeriodId, PropertyId = propertyTwo, Source = "Resident", Value = 200m, MeasuredAt = DateTimeOffset.UtcNow },
-                new Reading { MeterId = meterTwo, BillingPeriodId = billingPeriodId, PropertyId = propertyTwo, Source = "Company", Value = 190m, MeasuredAt = DateTimeOffset.UtcNow }
-            ]);
+                new MonthlySummarySnapshot(
+                    billingPeriodId,
+                    4,
+                    0,
+                    0,
+                    [
+                        new MonthlySummarySnapshotReading(meterOne, propertyOne, "Resident", 100m, DateTimeOffset.UtcNow, Guid.NewGuid()),
+                        new MonthlySummarySnapshotReading(meterOne, propertyOne, "Company", 110m, DateTimeOffset.UtcNow, Guid.NewGuid()),
+                        new MonthlySummarySnapshotReading(meterTwo, propertyTwo, "Resident", 200m, DateTimeOffset.UtcNow, Guid.NewGuid()),
+                        new MonthlySummarySnapshotReading(meterTwo, propertyTwo, "Company", 190m, DateTimeOffset.UtcNow, Guid.NewGuid())
+                    ]));
 
         var handler = new GetMonthlySummaryHandler(repository);
 

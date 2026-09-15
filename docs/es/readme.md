@@ -105,7 +105,7 @@ $env:ObjectStorage__Minio__BucketName = 'utilitymeter-evidence'
 $env:ObjectStorage__Minio__UseSsl = 'false'
 ```
 
-La aplicación crea el bucket configurado de MinIO bajo demanda si todavía no existe.
+La aplicación verifica el bucket configurado de MinIO durante el arranque y lo crea automáticamente si todavía no existe.
 
 Levantar la API:
 

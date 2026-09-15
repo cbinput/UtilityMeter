@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http.Json;
 using Microsoft.AspNetCore.HttpLogging;
+using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi;
 using Serilog;
@@ -24,8 +25,11 @@ public static class WebApplicationBuilderExtensions
     {
         #region Logging
 
-        _ = builder.Services.AddHttpLogging(logging =>
-            logging.LoggingFields = HttpLoggingFields.RequestPropertiesAndHeaders | HttpLoggingFields.ResponsePropertiesAndHeaders);
+        if (builder.Environment.IsDevelopment() || builder.Environment.IsEnvironment("local"))
+        {
+            _ = builder.Services.AddHttpLogging(logging =>
+                logging.LoggingFields = HttpLoggingFields.RequestPropertiesAndHeaders | HttpLoggingFields.ResponsePropertiesAndHeaders);
+        }
 
         _ = builder.Host.UseSerilog((hostContext, loggerConfiguration) =>
         {
@@ -58,6 +62,7 @@ public static class WebApplicationBuilderExtensions
 
         builder.Services.AddProblemDetails();
         builder.Services.AddExceptionHandler<ApiExceptionHandler>();
+        builder.Services.AddResponseCompression(options => options.EnableForHttps = true);
 
         #region Swagger
 

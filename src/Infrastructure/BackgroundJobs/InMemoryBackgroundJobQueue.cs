@@ -9,7 +9,7 @@ using Application.BackgroundJobs;
 
 internal sealed class InMemoryBackgroundJobQueue : IBackgroundJobQueue
 {
-    private readonly Channel<BackgroundJob> jobs = Channel.CreateUnbounded<BackgroundJob>(new UnboundedChannelOptions
+    private readonly Channel<Guid> jobs = Channel.CreateUnbounded<Guid>(new UnboundedChannelOptions
     {
         SingleReader = true,
         SingleWriter = false
@@ -29,6 +29,7 @@ internal sealed class InMemoryBackgroundJobQueue : IBackgroundJobQueue
         Directory.CreateDirectory(this.pendingPath);
         Directory.CreateDirectory(this.processingPath);
         RecoverProcessingJobs(this.pendingPath, this.processingPath);
+        QueuePersistedPendingJobs(this.pendingPath, this.jobs.Writer);
     }
 
     public async ValueTask QueueAsync(BackgroundJob job, CancellationToken cancellationToken = default)
@@ -38,28 +39,26 @@ internal sealed class InMemoryBackgroundJobQueue : IBackgroundJobQueue
         var path = GetPath(this.pendingPath, job.Id);
         var json = JsonSerializer.Serialize(job, this.jsonOptions);
         await File.WriteAllTextAsync(path, json, cancellationToken);
-        await this.jobs.Writer.WriteAsync(job, cancellationToken);
+        _ = this.jobs.Writer.TryWrite(job.Id);
     }
 
     public async IAsyncEnumerable<BackgroundJob> DequeueAsync([EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        while (!cancellationToken.IsCancellationRequested)
+        while (await this.jobs.Reader.WaitToReadAsync(cancellationToken))
         {
-            while (this.jobs.Reader.TryRead(out var queued))
+            while (this.jobs.Reader.TryRead(out var queuedJobId))
             {
-                if (TryClaimPendingJob(this.pendingPath, this.processingPath, queued.Id, this.jsonOptions, out var claimedFromChannel))
+                if (TryClaimPendingJob(this.pendingPath, this.processingPath, queuedJobId, this.jsonOptions, out var claimedFromChannel))
                 {
                     yield return claimedFromChannel;
+                    continue;
+                }
+
+                if (TryClaimNextPendingJob(this.pendingPath, this.processingPath, this.jsonOptions, out var claimedFromDisk))
+                {
+                    yield return claimedFromDisk;
                 }
             }
-
-            if (TryClaimNextPendingJob(this.pendingPath, this.processingPath, this.jsonOptions, out var claimedFromDisk))
-            {
-                yield return claimedFromDisk;
-                continue;
-            }
-
-            await Task.Delay(TimeSpan.FromMilliseconds(250), cancellationToken);
         }
     }
 
@@ -84,6 +83,7 @@ internal sealed class InMemoryBackgroundJobQueue : IBackgroundJobQueue
         }
 
         File.Move(processingFile, pendingFile);
+        _ = this.jobs.Writer.TryWrite(jobId);
         return Task.CompletedTask;
     }
 
@@ -157,6 +157,17 @@ internal sealed class InMemoryBackgroundJobQueue : IBackgroundJobQueue
             }
 
             File.Move(file, pendingFile);
+        }
+    }
+
+    private static void QueuePersistedPendingJobs(string pendingPath, ChannelWriter<Guid> writer)
+    {
+        foreach (var file in Directory.EnumerateFiles(pendingPath, "*.json", SearchOption.TopDirectoryOnly))
+        {
+            if (Guid.TryParseExact(Path.GetFileNameWithoutExtension(file), "N", out var jobId))
+            {
+                _ = writer.TryWrite(jobId);
+            }
         }
     }
 

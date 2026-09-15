@@ -7,10 +7,11 @@ using Microsoft.EntityFrameworkCore;
 internal class EntityFrameworkEvidenceRepository(UtilityMeterDbContext context) : IEvidenceRepository
 {
     private readonly UtilityMeterDbContext context = context ?? throw new ArgumentNullException(nameof(context));
+    private IQueryable<Evidence> Evidences => this.context.Evidence.AsNoTracking();
 
     public async Task<Evidence?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        return await this.context.Evidence.FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
+        return await this.Evidences.FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
     }
 
     public async Task<List<Evidence>> GetByReadingIdAsync(Guid readingId, CancellationToken cancellationToken = default)
@@ -23,7 +24,7 @@ internal class EntityFrameworkEvidenceRepository(UtilityMeterDbContext context) 
         }
 
         // Get all evidence for the reading
-        return await this.context.Evidence
+        return await this.Evidences
             .Where(e => reading.EvidenceIds.Contains(e.Id))
             .ToListAsync(cancellationToken);
     }
@@ -37,6 +38,6 @@ internal class EntityFrameworkEvidenceRepository(UtilityMeterDbContext context) 
 
     public async Task<bool> ExistsAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        return await this.context.Evidence.AnyAsync(e => e.Id == id, cancellationToken);
+        return await this.Evidences.AnyAsync(e => e.Id == id, cancellationToken);
     }
 }

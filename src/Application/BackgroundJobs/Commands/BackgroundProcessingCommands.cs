@@ -99,10 +99,11 @@ public sealed class EnqueueExportJobHandler(IBackgroundJobQueue queue, ILogger l
     }
 }
 
-public sealed class ProcessOcrExtractionJobHandler(IEvidenceRepository evidenceRepository, ILogger logger)
+public sealed class ProcessOcrExtractionJobHandler(IEvidenceRepository evidenceRepository, IObjectStorage objectStorage, ILogger logger)
     : IRequestHandler<ProcessOcrExtractionJobCommand>
 {
     private readonly IEvidenceRepository evidenceRepository = evidenceRepository ?? throw new ArgumentNullException(nameof(evidenceRepository));
+    private readonly IObjectStorage objectStorage = objectStorage ?? throw new ArgumentNullException(nameof(objectStorage));
     private readonly ILogger logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
     public async Task Handle(ProcessOcrExtractionJobCommand request, CancellationToken cancellationToken)
@@ -114,7 +115,19 @@ public sealed class ProcessOcrExtractionJobHandler(IEvidenceRepository evidenceR
             return;
         }
 
-        this.logger.Information("Processed OCR extraction job for evidence {EvidenceId} and storage key {StorageKey}", evidence.Id, evidence.StorageKey);
+        var metadata = await this.objectStorage.GetMetadataAsync(evidence.StorageKey, cancellationToken);
+        if (metadata == null)
+        {
+            this.logger.Warning("Skipping OCR extraction because storage key {StorageKey} was not found", evidence.StorageKey);
+            return;
+        }
+
+        this.logger.Information(
+            "Processed OCR extraction job for evidence {EvidenceId}, storage key {StorageKey}, content type {ContentType}, size {Size}",
+            evidence.Id,
+            evidence.StorageKey,
+            metadata.ContentType,
+            metadata.Size);
     }
 }
 
